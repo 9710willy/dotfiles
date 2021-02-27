@@ -40,7 +40,7 @@ return require('packer').startup(function()
     use { 'vim-utils/vim-man' }
     use { 'mbbill/undotree' }
     use { 'junegunn/fzf',
-    run = function() vim.fn['fzf#install'](0) end,
+    run = function() vim.fn['fzf#install']() end,
     config = function()
         require'settings.fzf'
     end,
