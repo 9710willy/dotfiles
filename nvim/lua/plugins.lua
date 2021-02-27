@@ -32,7 +32,6 @@ return require('packer').startup(function()
     --Debugger
     use { 'puremourning/vimspector', requires = { 'szw/vim-maximizer' } }
 
-    --use { 'tpope/vim-fugitive' }
     use { 'junegunn/gv.vim',
     requires = {'tpope/vim-fugitive'},
     config = function()
@@ -47,6 +46,8 @@ return require('packer').startup(function()
     end,
     }
     use { 'junegunn/fzf.vim'}
+    use { 'stsewd/fzf-checkout.vim'}
+
     use { 'vuciv/vim-bujo',
     config = function()
         vim.g['bujo#todo_file_path'] = '$HOME/.cache/bujo'
@@ -56,6 +57,7 @@ return require('packer').startup(function()
     config = function()
         require'settings.colors'
     end,}
+
     use { 'octol/vim-cpp-enhanced-highlight' }
     use { 'tpope/vim-projectionist' }
 
