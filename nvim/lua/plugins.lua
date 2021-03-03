@@ -1,7 +1,4 @@
---TODO: Try to use post install hooks
-
 vim.cmd [[packadd packer.nvim]]
-local use = require('packer').use
 
 return require('packer').startup(function()
     use {'wbthomason/packer.nvim', opt = true}
@@ -64,7 +61,11 @@ return require('packer').startup(function()
     --Telescope
     use {
      'nvim-telescope/telescope.nvim',
-     requires = {{'nvim-lua/popup.nvim'}, {'nvim-lua/plenary.nvim'}},
+     requires = {
+         {'nvim-lua/popup.nvim'},
+         {'nvim-lua/plenary.nvim'},
+         {'~/plugins/telescope-fzy-native.nvim'}
+     },
      config = function ()
          require'settings.telescope'
      end,
