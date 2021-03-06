@@ -3,6 +3,19 @@ vim.cmd [[packadd packer.nvim]]
 return require('packer').startup(function()
     use {'wbthomason/packer.nvim', opt = true}
 
+    --use { 'gruvbox-community/gruvbox',
+    --config = function()
+    --    require'settings.colors'
+    --end,
+    --}
+
+    use {"npxbr/gruvbox.nvim",
+    requires = {"rktjmp/lush.nvim"},
+    config = function()
+        require'settings.colors'
+    end,
+    }
+
     --Neovim LSP
     use {
      'neovim/nvim-lspconfig',
@@ -10,8 +23,7 @@ return require('packer').startup(function()
          {'tjdevries/nlua.nvim'},
          {'tjdevries/lsp_extensions.nvim'},
          {'nvim-lua/completion-nvim'},
-         {'RishabhRD/nvim-lsputils'},
-         {'RishabhRD/popfix'}},
+     },
      config = function()
          require'settings.lsp'
          vim.g.completion_matching_strategy_list = {'exact', 'substring', 'fuzzy'}
@@ -50,10 +62,6 @@ return require('packer').startup(function()
         vim.g['bujo#todo_file_path'] = '$HOME/.cache/bujo'
     end }
     use { 'tpope/vim-dispatch' }
-    use { 'gruvbox-community/gruvbox',
-    config = function()
-        require'settings.colors'
-    end,}
 
     use { 'octol/vim-cpp-enhanced-highlight' }
     use { 'tpope/vim-projectionist' }
