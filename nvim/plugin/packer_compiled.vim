@@ -36,12 +36,8 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/cheat.sh-vim"
   },
-  ["completion-nvim"] = {
-    loaded = true,
-    path = "/Users/will/.local/share/nvim/site/pack/packer/start/completion-nvim"
-  },
   fzf = {
-    config = { "\27LJ\2\n,\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\17settings.fzf\frequire\0" },
+    config = { "require('settings.fzf')" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/fzf"
   },
@@ -49,17 +45,12 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/fzf-checkout.vim"
   },
-  ["fzf.vim"] = {
-    loaded = true,
-    path = "/Users/will/.local/share/nvim/site/pack/packer/start/fzf.vim"
-  },
   ["gruvbox.nvim"] = {
-    config = { "\27LJ\2\n/\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\20settings.colors\frequire\0" },
+    config = { "require('settings.colors')" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/gruvbox.nvim"
   },
   ["gv.vim"] = {
-    config = { "\27LJ\2\n,\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\17settings.git\frequire\0" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/gv.vim"
   },
@@ -75,13 +66,20 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/nlua.nvim"
   },
+  ["nvim-compe"] = {
+    after_files = { "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_buffer.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_calc.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_nvim_lsp.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_nvim_lua.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_omni.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_path.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_snippets_nvim.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_spell.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_tags.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_treesitter.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_ultisnips.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_vim_lsc.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_vim_lsp.vim", "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe/after/plugin/compe_vsnip.vim" },
+    config = { "require('settings.compe')" },
+    loaded = false,
+    needs_bufread = false,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/nvim-compe"
+  },
   ["nvim-lspconfig"] = {
-    config = { "\27LJ\2\n~\0\0\3\0\6\0\b6\0\0\0'\2\1\0B\0\2\0016\0\2\0009\0\3\0005\1\5\0=\1\4\0K\0\1\0\1\4\0\0\nexact\14substring\nfuzzy&completion_matching_strategy_list\6g\bvim\17settings.lsp\frequire\0" },
+    config = { "require('settings.lsp')" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/nvim-lspconfig"
   },
   ["nvim-treesitter"] = {
-    config = { "\27LJ\2\n3\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\24settings.treesitter\frequire\0" },
+    config = { "require('settings.treesitter')" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/nvim-treesitter"
   },
@@ -103,13 +101,16 @@ _G.packer_plugins = {
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/telescope-fzy-native.nvim"
   },
   ["telescope.nvim"] = {
-    config = { "\27LJ\2\n2\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\23settings.telescope\frequire\0" },
+    config = { "require('settings.telescope')" },
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/telescope.nvim"
   },
   undotree = {
-    loaded = true,
-    path = "/Users/will/.local/share/nvim/site/pack/packer/start/undotree"
+    commands = { "UndotreeShow" },
+    config = { "vim.g.undotree_SetFocusWhenToggle = 1" },
+    loaded = false,
+    needs_bufread = false,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/undotree"
   },
   ["vim-bujo"] = {
     config = { "\27LJ\2\nG\0\0\2\0\4\0\0056\0\0\0009\0\1\0'\1\3\0=\1\2\0K\0\1\0\22$HOME/.cache/bujo\24bujo#todo_file_path\6g\bvim\0" },
@@ -121,12 +122,17 @@ _G.packer_plugins = {
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/vim-cpp-enhanced-highlight"
   },
   ["vim-dispatch"] = {
-    loaded = true,
-    path = "/Users/will/.local/share/nvim/site/pack/packer/start/vim-dispatch"
+    commands = { "Dispatch", "Make", "Focus", "Start" },
+    loaded = false,
+    needs_bufread = false,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/vim-dispatch"
   },
   ["vim-fugitive"] = {
-    loaded = true,
-    path = "/Users/will/.local/share/nvim/site/pack/packer/start/vim-fugitive"
+    commands = { "Git" },
+    config = { "require('settings.git')" },
+    loaded = false,
+    needs_bufread = true,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/vim-fugitive"
   },
   ["vim-man"] = {
     loaded = true,
@@ -140,6 +146,19 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/vim-projectionist"
   },
+  ["vim-startuptime"] = {
+    commands = { "StartupTime" },
+    config = { "vim.g.startuptime_tries = 10" },
+    loaded = false,
+    needs_bufread = false,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/vim-startuptime"
+  },
+  ["vim-vsnip"] = {
+    config = { "require('settings.vsnip')" },
+    loaded = false,
+    needs_bufread = false,
+    path = "/Users/will/.local/share/nvim/site/pack/packer/opt/vim-vsnip"
+  },
   vimspector = {
     loaded = true,
     path = "/Users/will/.local/share/nvim/site/pack/packer/start/vimspector"
@@ -149,17 +168,30 @@ _G.packer_plugins = {
 -- Config for: vim-bujo
 try_loadstring("\27LJ\2\nG\0\0\2\0\4\0\0056\0\0\0009\0\1\0'\1\3\0=\1\2\0K\0\1\0\22$HOME/.cache/bujo\24bujo#todo_file_path\6g\bvim\0", "config", "vim-bujo")
 -- Config for: nvim-treesitter
-try_loadstring("\27LJ\2\n3\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\24settings.treesitter\frequire\0", "config", "nvim-treesitter")
--- Config for: telescope.nvim
-try_loadstring("\27LJ\2\n2\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\23settings.telescope\frequire\0", "config", "telescope.nvim")
--- Config for: gv.vim
-try_loadstring("\27LJ\2\n,\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\17settings.git\frequire\0", "config", "gv.vim")
--- Config for: gruvbox.nvim
-try_loadstring("\27LJ\2\n/\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\20settings.colors\frequire\0", "config", "gruvbox.nvim")
+require('settings.treesitter')
 -- Config for: nvim-lspconfig
-try_loadstring("\27LJ\2\n~\0\0\3\0\6\0\b6\0\0\0'\2\1\0B\0\2\0016\0\2\0009\0\3\0005\1\5\0=\1\4\0K\0\1\0\1\4\0\0\nexact\14substring\nfuzzy&completion_matching_strategy_list\6g\bvim\17settings.lsp\frequire\0", "config", "nvim-lspconfig")
+require('settings.lsp')
+-- Config for: gruvbox.nvim
+require('settings.colors')
 -- Config for: fzf
-try_loadstring("\27LJ\2\n,\0\0\3\0\2\0\0046\0\0\0'\2\1\0B\0\2\1K\0\1\0\17settings.fzf\frequire\0", "config", "fzf")
+require('settings.fzf')
+-- Config for: telescope.nvim
+require('settings.telescope')
+
+-- Command lazy-loads
+vim.cmd [[command! -nargs=* -range -bang -complete=file Dispatch lua require("packer.load")({'vim-dispatch'}, { cmd = "Dispatch", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file Make lua require("packer.load")({'vim-dispatch'}, { cmd = "Make", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file Git lua require("packer.load")({'vim-fugitive'}, { cmd = "Git", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file Start lua require("packer.load")({'vim-dispatch'}, { cmd = "Start", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file StartupTime lua require("packer.load")({'vim-startuptime'}, { cmd = "StartupTime", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file Focus lua require("packer.load")({'vim-dispatch'}, { cmd = "Focus", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+vim.cmd [[command! -nargs=* -range -bang -complete=file UndotreeShow lua require("packer.load")({'undotree'}, { cmd = "UndotreeShow", l1 = <line1>, l2 = <line2>, bang = <q-bang>, args = <q-args> }, _G.packer_plugins)]]
+
+vim.cmd [[augroup packer_load_aucmds]]
+vim.cmd [[au!]]
+  -- Event lazy-loads
+vim.cmd [[au InsertEnter * ++once lua require("packer.load")({'vim-vsnip', 'nvim-compe'}, { event = "InsertEnter *" }, _G.packer_plugins)]]
+vim.cmd("augroup END")
 END
 
 catch

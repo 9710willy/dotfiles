@@ -32,3 +32,8 @@ nmap('<leader>pf', ':lua require("telescope.builtin").find_files()<CR>')
 nmap('<leader>pw', ':lua require("telescope.builtin").grep_string { search = vim.fn.expand("<cword>") }<CR>')
 nmap('<leader>pb', ':lua require("telescope.builtin").buffers()<CR>')
 nmap('<leader>vh', ':lua require("telescope.builtin").help_tags()<CR>')
+
+-- Git
+nmap('<leader>gs', ':Git<CR>')
+
+

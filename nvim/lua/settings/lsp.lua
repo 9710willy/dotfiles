@@ -1,5 +1,4 @@
 local lsp = require'lspconfig'
-local completion = require'completion'
 
 local eslint = {
     lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",
@@ -25,6 +24,10 @@ local prettier = {
     )
 }
 
+-- Snippet Support
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+
 vim.lsp.handlers["textDocument/formatting"] = function(err, _, result, _, bufnr)
   if err ~= nil or result == nil then
     return
@@ -46,8 +49,8 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
     {
         underline = true,
         signs = true,
-        update_in_insert = true,
-        virtual_text = true,
+        update_in_insert = false,
+        virtual_text = false,
     }
 )
 
@@ -91,7 +94,6 @@ end
 
 local on_attach = function(client)
     print("'" .. client.name .. "' language server started" )
-    completion.on_attach(client)
 
     if client.resolved_capabilities.document_formatting then
         vim.cmd [[augroup Format]]
@@ -114,17 +116,29 @@ local on_attach = function(client)
     map('n','<leader>ah',  '<cmd>lua vim.lsp.buf.hover()<CR>')
     map('n','<leader>af', '<cmd>lua vim.lsp.buf.code_action()<CR>')
     map('n','<leader>ar',  '<cmd>lua vim.lsp.buf.rename()<CR>')
-    -- Few language severs support these three
-    map('n','<leader>=',  '<cmd>lua vim.lsp.buf.formatting()<CR>')
+
+    if client.resolved_capabilities.document_formatting then
+        map('n','<leader>=',  '<cmd>lua vim.lsp.buf.formatting()<CR>')
+    end
+
     map('n','<leader>ai',  '<cmd>lua vim.lsp.buf.incoming_calls()<CR>')
     map('n','<leader>ao',  '<cmd>lua vim.lsp.buf.outgoing_calls()<CR>')
     -- Diagnostics mapping
+    if client.resolved_capabilities.document_highlight == true then
+        vim.cmd [[augroup lsp_aucmds]]
+        vim.cmd [[au CursorHold <buffer> lua vim.lsp.buf.document_highlight()]]
+        vim.cmd [[au CursorHold <buffer> lua vim.lsp.diagnostic.show_line_diagnostics()]]
+        vim.cmd [[au CursorMoved <buffer> lua vim.lsp.buf.clear_references()]]
+        vim.cmd [[augroup END]]
+    end
     map('n','<leader>ee', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>')
     map('n','<leader>en', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>')
     map('n','<leader>ep', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>')
 end
 
 lsp.tsserver.setup {
+    capabilities = capabilities,
+
     -- Avoid TSServer clashing with Prettier
     on_attach = function(client)
 
