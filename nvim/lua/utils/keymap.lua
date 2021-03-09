@@ -4,7 +4,6 @@ local function map_keys(mode, command, value, opts)
     end
     vim.api.nvim_set_keymap(mode, command, value, opts)
 end
-
 local function map(command, value, opts)
     map_keys('', command, value, opts)
 end
@@ -30,7 +29,7 @@ local function cmap(command, value, opts)
 end
 
 local function xmap(command, value, opts)
-    mapkeys('x', command, value, opts)
+    map_keys('x', command, value, opts)
 end
 
 local function omap(command, value, opts)

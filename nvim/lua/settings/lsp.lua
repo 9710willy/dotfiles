@@ -7,7 +7,7 @@ local eslint = {
 }
 
 local luafmt = {
-    formatCommand = "luafmt -i 4 -l 100 --stdin",
+    formatCommand = "luafmt ${-i:tabWidth} --stdin",
     formatStdin = true,
 }
 
@@ -43,10 +43,8 @@ vim.lsp.handlers["textDocument/formatting"] = function(err, _, result, _, bufnr)
   end
 end
 
-vim.lsp.handlers["textDocument/publishDiagnostics"] =
-    vim.lsp.with(
-    vim.lsp.diagnostic.on_publish_diagnostics,
-    {
+vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+    vim.lsp.diagnostic.on_publish_diagnostics, {
         underline = true,
         signs = true,
         update_in_insert = false,

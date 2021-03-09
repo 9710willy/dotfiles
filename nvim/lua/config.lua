@@ -17,7 +17,7 @@ set ('tabstop', 4)
 set ('softtabstop', 4)
 set ('shiftwidth', 4)
 set 'expandtab'
-set 'smartindent'
+--set 'smartindent'
 set 'number'
 set 'nowrap'
 set 'noswapfile'
@@ -35,7 +35,7 @@ set ('cmdheight', 2)
 
 -- Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
 -- delays and poor user experience.
-set ('updatetime', 50)
+set ('updatetime', 500)
 
 -- Don't pass messages to |ins-completion-menu|.
 vim.cmd('set shortmess+=c')
