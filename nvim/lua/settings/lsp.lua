@@ -74,7 +74,7 @@ vim.g.format_options_markdown = format_options_prettier
 
 -- Utility servers
 local map = function(type, key, value)
-    vim.fn.nvim_buf_set_keymap(0,type,key,value,{noremap = true, silent = true});
+    vim.api.nvim_buf_set_keymap(0,type,key,value,{noremap = true, silent = true});
 end
 
 FormatToggle = function(value)
