@@ -436,4 +436,9 @@ return {
 		dependencies = { "MunifTanjim/nui.nvim" },
 		event = "VeryLazy",
 	},
+  {
+    'SmiteshP/nvim-navic',
+    dependencies = 'neovim/nvim-lspconfig',
+    opts = { lazy_update_context = true },
+  },
 }
