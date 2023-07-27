@@ -40,6 +40,41 @@ return {
 		"kevinhwang91/nvim-bqf",
 		ft = "qf",
 	},
+    {
+    'echasnovski/mini.nvim',
+    version = false,
+    event = 'User ActuallyEditing',
+    config = function()
+      require('mini.surround').setup { search_method = 'cover_or_nearest' }
+      require('mini.align').setup { mappings = { start = '', start_with_preview = 'g=' } }
+      require('mini.ai').setup { search_method = 'cover_or_nearest' }
+      require('mini.bracketed').setup {}
+      require('mini.comment').setup { options = { ignore_blank_line = true } }
+      require('mini.indentscope').setup {
+        symbol = '│',
+        options = { try_as_border = true },
+        draw = { animation = require('mini.indentscope').gen_animation.none() },
+      }
+      require('mini.move').setup {}
+      require('mini.splitjoin').setup { mappings = { toggle = 'gJ' } }
+    end,
+  },
+  {
+    'windwp/nvim-autopairs',
+    opts = {
+      enable_check_bracket_line = false,
+      ignored_next_char = '[%w%.]',
+      fast_wrap = {},
+    },
+    event = 'BufReadPost',
+  },
+  {
+    'andymass/vim-matchup',
+    init = function()
+      require 'config.matchup'
+    end,
+    event = 'User ActuallyEditing',
+  },
 	{
 		"ellisonleao/gruvbox.nvim",
 		config = function()
@@ -95,19 +130,23 @@ return {
 		dependencies = "nvim-dap",
 		opts = {},
 	},
-	{
-		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v2.x",
-		init = function()
-			vim.g.neo_tree_remove_legacy_commands = true
-		end,
-		cmd = "Neotree",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-			"MunifTanjim/nui.nvim",
-		},
-	},
+  {
+    'nvim-neo-tree/neo-tree.nvim',
+    branch = 'v3.x',
+    init = function()
+      vim.g.neo_tree_remove_legacy_commands = true
+    end,
+    cmd = 'Neotree',
+    event = 'User EditingDirectory',
+    config = function()
+      require 'config.neotree'
+    end,
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons',
+      'MunifTanjim/nui.nvim',
+    },
+  },
 	"folke/neodev.nvim",
 	{
 		"nvim-treesitter/nvim-treesitter",
@@ -133,59 +172,10 @@ return {
 	"L3MON4D3/LuaSnip",
 	{ "rafamadriz/friendly-snippets", lazy = false },
 	{
-		"lukas-reineke/indent-blankline.nvim",
-		event = "VeryLazy",
-		dependencies = "nvim-treesitter",
-		config = function()
-			require("indent_blankline").setup({
-				char = "│",
-				space_char_blankline = " ",
-				use_treesitter = true,
-				show_first_indent_level = false,
-				show_trailing_blankline_indent = false,
-				show_current_context = true,
-				use_treesitter_scope = false,
-				context_patterns = {
-					"^for",
-					"^func",
-					"^if",
-					"^object",
-					"^table",
-					"^while",
-					"argument_list",
-					"arguments",
-					"block",
-					"catch_clause",
-					"class",
-					"dictionary",
-					"do_block",
-					"element",
-					"else_clause",
-					"except",
-					"for",
-					"function",
-					"if_statement",
-					"import_statement",
-					"method",
-					"object",
-					"operation_type",
-					"return",
-					"table",
-					"try",
-					"try_statement",
-					"tuple",
-					"while",
-					"with",
-				},
-			})
-		end,
-	},
-	{
 		"numToStr/Comment.nvim",
 		event = "VeryLazy",
 		opts = {},
 	},
-	{ "machakann/vim-sandwich", event = "VeryLazy" },
 	{
 		"andymass/vim-matchup",
 		init = function()
@@ -277,19 +267,17 @@ return {
 	},
 	"crispgm/telescope-heading.nvim",
 	"nvim-telescope/telescope-file-browser.nvim",
-	{
-		"stevearc/aerial.nvim",
-		config = function()
-			require("aerial").setup({
-				backends = { "lsp", "treesitter", "markdown", "man" },
-				on_attach = function(bufnr)
-					vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
-					vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
-				end,
-			})
-		end,
-		event = "VeryLazy",
-	},
+  {
+    'stevearc/aerial.nvim',
+    opts = {
+      backends = { 'lsp', 'treesitter', 'markdown', 'man' },
+      on_attach = function(bufnr)
+        vim.keymap.set('n', '{', '<cmd>AerialPrev<CR>', { buffer = bufnr })
+        vim.keymap.set('n', '}', '<cmd>AerialNext<CR>', { buffer = bufnr })
+      end,
+    },
+    cmd = { 'AerialOpen', 'AerialToggle' },
+  },
 	{
 		"folke/todo-comments.nvim",
 		dependencies = "nvim-lua/plenary.nvim",
