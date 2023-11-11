@@ -40,41 +40,41 @@ return {
 		"kevinhwang91/nvim-bqf",
 		ft = "qf",
 	},
-    {
-    'echasnovski/mini.nvim',
-    version = false,
-    event = 'User ActuallyEditing',
-    config = function()
-      require('mini.surround').setup { search_method = 'cover_or_nearest' }
-      require('mini.align').setup { mappings = { start = '', start_with_preview = 'g=' } }
-      require('mini.ai').setup { search_method = 'cover_or_nearest' }
-      require('mini.bracketed').setup {}
-      require('mini.comment').setup { options = { ignore_blank_line = true } }
-      require('mini.indentscope').setup {
-        symbol = '│',
-        options = { try_as_border = true },
-        draw = { animation = require('mini.indentscope').gen_animation.none() },
-      }
-      require('mini.move').setup {}
-      require('mini.splitjoin').setup { mappings = { toggle = 'gJ' } }
-    end,
-  },
-  {
-    'windwp/nvim-autopairs',
-    opts = {
-      enable_check_bracket_line = false,
-      ignored_next_char = '[%w%.]',
-      fast_wrap = {},
-    },
-    event = 'BufReadPost',
-  },
-  {
-    'andymass/vim-matchup',
-    init = function()
-      require 'config.matchup'
-    end,
-    event = 'User ActuallyEditing',
-  },
+	{
+		"echasnovski/mini.nvim",
+		version = false,
+		event = "User ActuallyEditing",
+		config = function()
+			require("mini.surround").setup({ search_method = "cover_or_nearest" })
+			require("mini.align").setup({ mappings = { start = "", start_with_preview = "g=" } })
+			require("mini.ai").setup({ search_method = "cover_or_nearest" })
+			require("mini.bracketed").setup({})
+			require("mini.comment").setup({ options = { ignore_blank_line = true } })
+			require("mini.indentscope").setup({
+				symbol = "│",
+				options = { try_as_border = true },
+				draw = { animation = require("mini.indentscope").gen_animation.none() },
+			})
+			require("mini.move").setup({})
+			require("mini.splitjoin").setup({ mappings = { toggle = "gJ" } })
+		end,
+	},
+	{
+		"windwp/nvim-autopairs",
+		opts = {
+			enable_check_bracket_line = false,
+			ignored_next_char = "[%w%.]",
+			fast_wrap = {},
+		},
+		event = "BufReadPost",
+	},
+	{
+		"andymass/vim-matchup",
+		init = function()
+			require("config.matchup")
+		end,
+		event = "User ActuallyEditing",
+	},
 	{
 		"ellisonleao/gruvbox.nvim",
 		config = function()
@@ -130,23 +130,23 @@ return {
 		dependencies = "nvim-dap",
 		opts = {},
 	},
-  {
-    'nvim-neo-tree/neo-tree.nvim',
-    branch = 'v3.x',
-    init = function()
-      vim.g.neo_tree_remove_legacy_commands = true
-    end,
-    cmd = 'Neotree',
-    event = 'User EditingDirectory',
-    config = function()
-      require 'config.neotree'
-    end,
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-tree/nvim-web-devicons',
-      'MunifTanjim/nui.nvim',
-    },
-  },
+	{
+		"nvim-neo-tree/neo-tree.nvim",
+		branch = "v3.x",
+		init = function()
+			vim.g.neo_tree_remove_legacy_commands = true
+		end,
+		cmd = "Neotree",
+		event = "User EditingDirectory",
+		config = function()
+			require("config.neotree")
+		end,
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-tree/nvim-web-devicons",
+			"MunifTanjim/nui.nvim",
+		},
+	},
 	"folke/neodev.nvim",
 	{
 		"nvim-treesitter/nvim-treesitter",
@@ -267,17 +267,17 @@ return {
 	},
 	"crispgm/telescope-heading.nvim",
 	"nvim-telescope/telescope-file-browser.nvim",
-  {
-    'stevearc/aerial.nvim',
-    opts = {
-      backends = { 'lsp', 'treesitter', 'markdown', 'man' },
-      on_attach = function(bufnr)
-        vim.keymap.set('n', '{', '<cmd>AerialPrev<CR>', { buffer = bufnr })
-        vim.keymap.set('n', '}', '<cmd>AerialNext<CR>', { buffer = bufnr })
-      end,
-    },
-    cmd = { 'AerialOpen', 'AerialToggle' },
-  },
+	{
+		"stevearc/aerial.nvim",
+		opts = {
+			backends = { "lsp", "treesitter", "markdown", "man" },
+			on_attach = function(bufnr)
+				vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
+				vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+			end,
+		},
+		cmd = { "AerialOpen", "AerialToggle" },
+	},
 	{
 		"folke/todo-comments.nvim",
 		dependencies = "nvim-lua/plenary.nvim",
@@ -389,7 +389,67 @@ return {
 			end,
 		},
 	},
-	{ "jose-elias-alvarez/null-ls.nvim", dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" } },
+	{
+		"mfussenegger/nvim-lint",
+		event = { "BufWritePre" },
+		config = function()
+			local lint = require("lint")
+			local chktex = lint.linters.chktex
+			-- NOTE: chktex returns non-zero exit codes if there are any warnings or errors reported
+			chktex.ignore_exitcode = true
+			lint.linters_by_ft = {
+				tex = { "chktex" },
+				javascript = { "eslint_d" },
+				typescript = { "eslint_d" },
+				NeogitCommitMessage = { "gitlint" },
+				c = { "flawfinder" },
+				cpp = { "flawfinder" },
+				lua = { "selene" },
+				sh = { "shellcheck" },
+				bash = { "shellcheck" },
+				zsh = { "shellcheck" },
+				vim = { "vint" },
+			}
+
+			vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+				callback = function()
+					require("lint").try_lint()
+				end,
+			})
+		end,
+	},
+	{
+		"stevearc/conform.nvim",
+		event = { "BufWritePre" },
+		cmd = { "ConformInfo" },
+		keys = {
+			{
+				-- Customize or remove this keymap to your liking
+				"<leader>f",
+				function()
+					require("conform").format({ async = true, lsp_fallback = true })
+				end,
+				mode = "",
+				desc = "Format buffer",
+			},
+		},
+		opts = {
+			formatters_by_ft = {
+				lua = { "stylua" },
+				python = { "isort", "yapf" },
+				c = { "clang_format" },
+				cpp = { "clang_format" },
+				javascript = { "eslint_d", "prettierd" },
+				typescript = { "eslint_d", "prettierd" },
+				rust = { "rustfmt" },
+				bash = { "shfmt", "shellcheck" },
+				zsh = { "shfmt", "shellcheck" },
+				sh = { "shfmt", "shellcheck" },
+				toml = { "taplo" },
+				["_"] = { "trim_whitespace" },
+			},
+		},
+	},
 	{
 		"folke/noice.nvim",
 		config = function()
@@ -436,9 +496,9 @@ return {
 		dependencies = { "MunifTanjim/nui.nvim" },
 		event = "VeryLazy",
 	},
-  {
-    'SmiteshP/nvim-navic',
-    dependencies = 'neovim/nvim-lspconfig',
-    opts = { lazy_update_context = true },
-  },
+	{
+		"SmiteshP/nvim-navic",
+		dependencies = "neovim/nvim-lspconfig",
+		opts = { lazy_update_context = true },
+	},
 }
