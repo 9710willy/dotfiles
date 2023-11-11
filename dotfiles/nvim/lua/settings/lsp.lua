@@ -1,7 +1,5 @@
-require("neodev").setup({})
-
 local lspconfig = require("lspconfig")
-local null_ls = require("null-ls")
+-- local lightbulb = require 'nvim-lightbulb'
 
 local lsp = vim.lsp
 local buf_keymap = vim.api.nvim_buf_set_keymap
@@ -36,7 +34,7 @@ lsp.handlers["textDocument/publishDiagnostics"] = lsp.with(lsp.diagnostic.on_pub
 })
 
 local keymap_opts = { noremap = true, silent = true }
-local function on_attach(client)
+local function setup_keymaps(client, _bufnr)
 	buf_keymap(0, "n", "gD", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.declaration }, keymap_opts))
 	buf_keymap(0, "n", "gd", "<cmd>Glance definitions<CR>", keymap_opts)
 	buf_keymap(0, "n", "gi", "<cmd>Glance implementations<CR>", keymap_opts)
@@ -57,60 +55,6 @@ local function on_attach(client)
 	buf_keymap(0, "n", "gr", "<cmd>Glance references<CR>", keymap_opts)
 	buf_keymap(0, "n", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.code_action }, keymap_opts))
 	buf_keymap(0, "v", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.range_code_action }, keymap_opts))
-	buf_keymap(
-		0,
-		"n",
-		"]e",
-		"",
-		vim.tbl_extend("keep", {
-			callback = function()
-				vim.diagnostic.goto_next({ float = { scope = "line", border = border } })
-			end,
-		}, keymap_opts)
-	)
-	buf_keymap(
-		0,
-		"n",
-		"[e",
-		"",
-		vim.tbl_extend("keep", {
-			callback = function()
-				vim.diagnostic.goto_prev({ float = { scope = "line", border = border } })
-			end,
-		}, keymap_opts)
-	)
-
-	if client.server_capabilities.documentFormattingProvider then
-		buf_keymap(
-			0,
-			"n",
-			"<leader>f",
-			"",
-			vim.tbl_extend("keep", {
-				callback = function(bufnr)
-					vim.lsp.buf.format({
-						async = true,
-						filter = function(fmtclient)
-							return fmtclient.name == "null-ls" or not fmtclient.prefer_null_ls
-						end,
-						bufnr = bufnr,
-					})
-				end,
-			}, keymap_opts)
-		)
-
-    buf_keymap(
-      0,
-      'i',
-      '<c-f>',
-      '',
-      vim.tbl_extend('keep', {
-        callback = function()
-          vim.lsp.buf.format { async = true }
-        end,
-      }, keymap_opts)
-    )
-	end
 
 	-- TODO: Use the nicer new API for autocommands
 	cmd("augroup lsp_aucmds")
@@ -121,28 +65,37 @@ local function on_attach(client)
 	cmd("augroup END")
 end
 
-local function prefer_null_ls_fmt(client)
-	client.server_capabilities.documentHighlightProvider = false
-	client.server_capabilities.documentFormattingProvider = false
-	on_attach(client)
-end
-
 local servers = {
-	bashls = {
-		cmd = { "bash-language-server", "start" },
-	},
+	bashls = {},
 	neocmake = {},
 	cssls = {
 		cmd = { "vscode-css-languageserver", "--stdio" },
 		filetypes = { "css", "scss", "less", "sass" },
 		root_dir = lspconfig.util.root_pattern("package.json", ".git"),
 	},
+	dockerls = {},
 	-- ghcide = {},
 	html = { cmd = { "vscode-html-languageserver", "--stdio" } },
-	jsonls = { prefer_null_ls = true, cmd = { "vscode-json-languageserver", "--stdio" } },
-	julials = { settings = { julia = { format = { indent = 2 } } } },
+	jsonls = { cmd = { "vscode-json-languageserver", "--stdio" } },
+	julials = {
+		on_new_config = function(new_config, _)
+			local julia = vim.fn.expand("~/.julia/environments/nvim-lspconfig/bin/julia")
+			if lspconfig.util.path.is_file(julia) then
+				new_config.cmd[1] = julia
+			end
+		end,
+		settings = { julia = { format = { indent = 2 } } },
+	},
 	ocamllsp = {},
-	pyright = { settings = { python = { formatting = { provider = "yapf" }, linting = { pytypeEnabled = true } } } },
+	pyright = {
+		settings = {
+			python = {
+				analysis = { useLibraryCodeForTypes = true },
+				formatting = { provider = "yapf" },
+				linting = { pytypeEnabled = true },
+			},
+		},
+	},
 	ruff_lsp = {},
 	rust_analyzer = {
 		settings = {
@@ -156,17 +109,21 @@ local servers = {
 		},
 	},
 	lua_ls = {
-		prefer_null_ls = true,
+		before_init = require("neodev.lsp").before_init,
 		single_file_support = true,
 		settings = {
 			Lua = {
 				workspace = {
 					checkThirdParty = false,
+					library = vim.api.nvim_get_runtime_file("", true),
 				},
 				completion = {
 					workspaceWord = true,
 					callSnippet = "Both",
 				},
+				runtime = { version = "LuaJIT" },
+				diagnostics = { globals = { "vim" } },
+				telemetry = { enable = false },
 			},
 			diagnostics = {
 				groupSeverity = {
@@ -199,6 +156,31 @@ local servers = {
 			},
 		},
 	},
+	texlab = {
+		settings = {
+			texlab = {
+				chktex = { onOpenAndSave = true },
+				formatterLineLength = 100,
+				forwardSearch = {
+					executable = "sioyek",
+					args = { "--forward-search-file", "%f", "--forward-search-line", "%l", "%p" },
+				},
+			},
+		},
+	},
+	ltex = {
+		cmd = { "/usr/bin/ltex-ls" },
+		on_attach = function(client, bufnr)
+			require("ltex_extra").setup({})
+		end,
+		settings = {
+			ltex = {
+				checkFrequency = "save",
+				additionalRules = { enablePickyRules = true },
+				["ltex-ls"] = { path = "/opt/ltex-ls" },
+			},
+		},
+	},
 	tsserver = {},
 	vimls = {},
 }
@@ -206,9 +188,32 @@ local servers = {
 local client_capabilities = require("cmp_nvim_lsp").default_capabilities()
 client_capabilities.offsetEncoding = { "utf-16" }
 
+local on_attach_fns = {
+	function(client, bufnr)
+		if client.server_capabilities.documentSymbolProvider then
+			require("nvim-navic").attach(client, bufnr)
+		end
+
+		vim.lsp.buf.inlay_hint(
+			bufnr,
+			client.server_capabilities.inlayHintProvider ~= nil
+				and client.server_capabilities.inlayHintProvider ~= false
+		)
+	end,
+	setup_keymaps,
+}
+
+local function do_on_attach_fns(client, bufnr)
+	for _, fn in ipairs(on_attach_fns) do
+		fn(client, bufnr)
+	end
+end
+
 require("clangd_extensions").setup({
 	server = {
-		on_attach = prefer_null_ls_fmt,
+		on_attach = function(client, bufnr)
+			do_on_attach_fns(client, bufnr)
+		end,
 		cmd = {
 			"clangd",
 			"--background-index",
@@ -216,6 +221,10 @@ require("clangd_extensions").setup({
 			"--completion-style=bundled",
 			"--header-insertion=iwyu",
 			"--cross-file-rename",
+			"--all-scopes-completion",
+			"--log=error",
+			"--suggest-missing-includes",
+			"--pch-storage=memory",
 		},
 		init_options = {
 			clangdFileStatus = true,
@@ -226,7 +235,7 @@ require("clangd_extensions").setup({
 		capabilities = client_capabilities,
 	},
 	extensions = {
-		inlay_hints = { only_current_line = false, show_variable_name = true },
+		autoSetHints = false,
 		ast = {
 			role_icons = {
 				type = "",
@@ -236,7 +245,6 @@ require("clangd_extensions").setup({
 				statement = "",
 				["template argument"] = "",
 			},
-
 			kind_icons = {
 				Compound = "",
 				Recovery = "",
@@ -251,55 +259,19 @@ require("clangd_extensions").setup({
 })
 
 for server, config in pairs(servers) do
-	if config.prefer_null_ls then
-		if config.on_attach then
-			local old_on_attach = config.on_attach
-			config.on_attach = function(client, bufnr)
-				old_on_attach(client, bufnr)
-				prefer_null_ls_fmt(client)
-			end
-		else
-			config.on_attach = prefer_null_ls_fmt
+	-- TODO: maybe refactor to avoid creating a new closure per server
+	if config.on_attach then
+		local old_on_attach = config.on_attach
+		config.on_attach = function(client, bufnr)
+			old_on_attach(client, bufnr)
+			do_on_attach_fns(client, bufnr)
 		end
-	elseif not config.on_attach then
-		config.on_attach = on_attach
+	else
+		config.on_attach = function(client, bufnr)
+			do_on_attach_fns(client, bufnr)
+		end
 	end
 
 	config.capabilities = vim.tbl_deep_extend("keep", config.capabilities or {}, client_capabilities)
 	lspconfig[server].setup(config)
 end
-
--- null-ls setup
-local null_fmt = null_ls.builtins.formatting
-local null_diag = null_ls.builtins.diagnostics
-local null_act = null_ls.builtins.code_actions
-null_ls.setup({
-	sources = {
-		null_diag.chktex,
-		null_act.eslint_d,
-		null_diag.eslint_d,
-		null_fmt.eslint_d,
-		-- null_diag.cppcheck,
-		-- null_diag.proselint,
-		null_diag.pylint,
-		-- null_diag.selene,
-		null_diag.shellcheck,
-		null_diag.teal,
-		-- null_diag.vale,
-		null_diag.vint,
-		-- null_diag.write_good.with { filetypes = { 'markdown', 'tex' } },
-		null_fmt.clang_format,
-		-- null_fmt.cmake_format,
-		null_fmt.isort,
-		null_fmt.prettierd,
-		null_fmt.rustfmt,
-		null_fmt.shfmt,
-		null_fmt.stylua,
-		null_fmt.trim_whitespace,
-		null_fmt.yapf,
-		null_fmt.black,
-		null_act.gitsigns,
-		-- null_act.refactoring.with { filetypes = { 'javascript', 'typescript', 'lua', 'python', 'c', 'cpp' } },
-	},
-	on_attach = on_attach,
-})
