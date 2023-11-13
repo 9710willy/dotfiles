@@ -139,7 +139,7 @@ return {
 		cmd = "Neotree",
 		event = "User EditingDirectory",
 		config = function()
-			require("config.neotree")
+			require("settings.neotree")
 		end,
 		dependencies = {
 			"nvim-lua/plenary.nvim",
