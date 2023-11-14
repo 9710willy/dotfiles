@@ -19,3 +19,4 @@ map('n', '<localleader>dc', '', {
     require('neogen').generate { type = 'class' }
   end,
   noremap = true,
+})
