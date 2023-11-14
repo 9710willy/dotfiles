@@ -71,7 +71,7 @@ return {
 	{
 		"andymass/vim-matchup",
 		init = function()
-			require("config.matchup")
+			require("settings.matchup")
 		end,
 		event = "User ActuallyEditing",
 	},
@@ -165,7 +165,7 @@ return {
 		"danymat/neogen",
 		dependencies = "nvim-treesitter",
 		config = function()
-			require("config.neogen")
+			require("settings.neogen")
 		end,
 		keys = { "<localleader>d", "<localleader>df", "<localleader>dc" },
 	},
