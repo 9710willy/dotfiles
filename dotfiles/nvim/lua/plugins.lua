@@ -501,4 +501,21 @@ return {
 		dependencies = "neovim/nvim-lspconfig",
 		opts = { lazy_update_context = true },
 	},
+  {
+    'chrisgrieser/nvim-rulebook',
+    keys = {
+      {
+        '<leader>i',
+        function()
+          require('rulebook').ignoreRule()
+        end,
+      },
+      {
+        '<leader>l',
+        function()
+          require('rulebook').lookupRule()
+        end,
+      },
+    },
+  },
 }
