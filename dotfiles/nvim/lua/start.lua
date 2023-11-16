@@ -1,4 +1,3 @@
-
 -- TODO: Could almost certainly make this a lot faster, especially by using Luv more directly in the
 -- MRU logic, making make_sections() construct the full table of strings first and then call
 -- set_lines only once (still need to deal with highlights), maybe making file info fill in async
@@ -53,20 +52,20 @@ local function recent_files()
 end
 
 local commands = {
-  { key = 'e', disp = '  New file',         cmd = 'ene | startinsert',     editing = true },
-  { key = 'u', disp = '  Update plugins',   cmd = 'Lazy sync' },
-  { key = 'b', disp = '  File Browser',     cmd = 'Telescope file_browser' },
-  { key = 'r', disp = '  Recent files',     cmd = 'Telescope oldfiles' },
-  { key = 's', disp = '  Start Prosession', cmd = 'Prosession .',          editing = true },
-  { key = 'g', disp = '  NeoGit',           cmd = 'Neogit' },
-  { key = 't', disp = '⏱  Time startup',     cmd = 'StartupTime' },
-  { key = 'q', disp = '  Quit',             cmd = 'qa' },
+  { key = 'e', disp = '  New file', cmd = 'ene | startinsert', editing = true },
+  { key = 'u', disp = '  Update plugins', cmd = 'Lazy sync' },
+  { key = 'b', disp = '  File Browser', cmd = 'Telescope file_browser' },
+  { key = 'r', disp = '  Recent files', cmd = 'Telescope oldfiles' },
+  { key = 's', disp = '  Start Prosession', cmd = 'Prosession .', editing = true },
+  { key = 'g', disp = '  NeoGit', cmd = 'Neogit' },
+  { key = 't', disp = '⏱  Time startup', cmd = 'Lazy profile' },
+  { key = 'q', disp = '  Quit', cmd = 'qa' },
 }
 
 -- TODO: Maybe make the show functions unevaluated and run async? Would require rewriting using LUV
 -- functions, which isn't a bad idea anyway
 local sections = {
-  { title = 'Commands',     show = commands },
+  { title = 'Commands', show = commands },
   { title = 'Recent Files', show = recent_files() },
 }
 
@@ -177,7 +176,7 @@ end
 
 local function do_binding(binding)
   if binding.editing then
-    vim.cmd [[ doautocmd User ActuallyEditing ]]
+    vim.api.nvim_exec_autocmds('User', { pattern = 'ActuallyEditing' })
   end
 
   vim.cmd(binding.cmd)
