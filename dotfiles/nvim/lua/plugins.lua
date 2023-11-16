@@ -147,6 +147,7 @@ return {
 			"MunifTanjim/nui.nvim",
 		},
 	},
+	{ "Civitasv/cmake-tools.nvim", lazy = true, opts = { cmake_always_use_terminal = true } },
 	"folke/neodev.nvim",
 	{
 		"nvim-treesitter/nvim-treesitter",
@@ -501,21 +502,21 @@ return {
 		dependencies = "neovim/nvim-lspconfig",
 		opts = { lazy_update_context = true },
 	},
-  {
-    'chrisgrieser/nvim-rulebook',
-    keys = {
-      {
-        '<leader>i',
-        function()
-          require('rulebook').ignoreRule()
-        end,
-      },
-      {
-        '<leader>l',
-        function()
-          require('rulebook').lookupRule()
-        end,
-      },
-    },
-  },
+	{
+		"chrisgrieser/nvim-rulebook",
+		keys = {
+			{
+				"<leader>i",
+				function()
+					require("rulebook").ignoreRule()
+				end,
+			},
+			{
+				"<leader>l",
+				function()
+					require("rulebook").lookupRule()
+				end,
+			},
+		},
+	},
 }
