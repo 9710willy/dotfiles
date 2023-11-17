@@ -36,7 +36,7 @@ local diagnostics_signs = {
 }
 
 local highlights
-if vim.g.colors_name ~= 'nazgul' then
+if vim.g.colors_name ~= 'gruvbox' then
   highlights = nil
 else
   highlights = {
