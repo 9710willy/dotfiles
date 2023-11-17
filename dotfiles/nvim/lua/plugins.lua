@@ -11,29 +11,63 @@ return {
 	},
 	{ "chaoren/vim-wordmotion", event = "VeryLazy" },
 	{
-		"ggandor/leap.nvim",
+		"folke/flash.nvim",
 		event = "VeryLazy",
-		dependencies = "tpope/vim-repeat",
-		config = function()
-			local map = vim.api.nvim_set_keymap
-			-- 2-character Sneak (default)
-			local opts = { noremap = false }
-			map("n", "z", "<Plug>(leap-forward-x)", opts)
-			map("n", "Z", "<Plug>(leap-backward-x)", opts)
-
-			-- visual-mode
-			map("x", "z", "<Plug>(leap-forward-x)", opts)
-			map("x", "Z", "<Plug>(leap-backward-x)", opts)
-
-			-- operator-pending-mode
-			map("o", "z", "<Plug>(leap-forward-x)", opts)
-			map("o", "Z", "<Plug>(leap-backward-x)", opts)
-		end,
-	},
-	{
-		"ggandor/flit.nvim",
-		opts = { labeled_modes = "nv" },
-		event = "VeryLazy",
+		opts = {
+			modes = { search = { enabled = false } },
+			exclude = {
+				"NeogitStatus",
+				"notify",
+				"cmp_menu",
+				"noice",
+				"flash_prompt",
+				function(win)
+					return not vim.api.nvim_win_get_config(win).focusable
+				end,
+			},
+		},
+		keys = {
+			{
+				"z",
+				mode = { "n", "x", "o" },
+				function()
+					require("flash").jump()
+				end,
+				desc = "Flash",
+			},
+			{
+				"Z",
+				mode = { "n", "o", "x" },
+				function()
+					require("flash").treesitter()
+				end,
+				desc = "Flash Treesitter",
+			},
+			{
+				"r",
+				mode = "o",
+				function()
+					require("flash").remote()
+				end,
+				desc = "Remote Flash",
+			},
+			{
+				"R",
+				mode = { "o", "x" },
+				function()
+					require("flash").treesitter_search()
+				end,
+				desc = "Treesitter Search",
+			},
+			{
+				"<c-F>",
+				mode = { "c" },
+				function()
+					require("flash").toggle()
+				end,
+				desc = "Toggle Flash Search",
+			},
+		},
 	},
 	{ "Olical/vim-enmasse", cmd = "EnMasse" },
 	{
@@ -73,8 +107,31 @@ return {
 		init = function()
 			require("settings.matchup")
 		end,
-		event = "User ActuallyEditing",
+		lazy = false,
 	},
+	{ "romainl/vim-cool", event = "VeryLazy" },
+	{
+		"nvim-telescope/telescope.nvim",
+		dependencies = {
+			"nvim-lua/popup.nvim",
+			"nvim-lua/plenary.nvim",
+			"telescope-fzf-native.nvim",
+			"nvim-telescope/telescope-ui-select.nvim",
+		},
+		init = function()
+			require("settings.telescope_setup")
+		end,
+		config = function()
+			require("settings.telescope")
+		end,
+		cmd = "Telescope",
+	},
+	{
+		"nvim-telescope/telescope-fzf-native.nvim",
+		build = "make",
+	},
+	"crispgm/telescope-heading.nvim",
+	"nvim-telescope/telescope-file-browser.nvim",
 	{
 		"ellisonleao/gruvbox.nvim",
 		config = function()
@@ -83,6 +140,7 @@ return {
 		lazy = false,
 	},
 	"neovim/nvim-lspconfig",
+	"nvim-tree/nvim-web-devicons",
 	{
 		"smjonas/inc-rename.nvim",
 		opts = {},
@@ -94,6 +152,27 @@ return {
 		opts = {},
 	},
 	"p00f/clangd_extensions.nvim",
+	{
+		"nvim-treesitter/nvim-treesitter",
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter-refactor",
+			"RRethy/nvim-treesitter-textsubjects",
+			"RRethy/nvim-treesitter-endwise",
+		},
+		build = ":TSUpdate",
+		event = "VeryLazy",
+		config = function()
+			require("settings.treesitter")
+		end,
+	},
+	{
+		"danymat/neogen",
+		dependencies = "nvim-treesitter",
+		config = function()
+			require("settings.neogen")
+		end,
+		keys = { "<localleader>d", "<localleader>df", "<localleader>dc" },
+	},
 	{
 		"hrsh7th/nvim-cmp",
 		dependencies = {
@@ -122,13 +201,32 @@ return {
 		config = function()
 			require("settings.dap")
 		end,
-		dependencies = "jbyuki/one-small-step-for-vimkind",
+		dependencies = {
+			"jbyuki/one-small-step-for-vimkind",
+			{
+				"rcarriga/nvim-dap-ui",
+				opts = {},
+				config = function(_, opts)
+					local dap = require("dap")
+					local dapui = require("dapui")
+					dapui.setup(opts)
+					dap.listeners.after.event_initialized["dapui_config"] = function()
+						dapui.open({})
+					end
+					dap.listeners.before.event_terminated["dapui_config"] = function()
+						dapui.close({})
+					end
+					dap.listeners.before.event_exited["dapui_config"] = function()
+						dapui.close({})
+					end
+				end,
+			},
+			{
+				"theHamsta/nvim-dap-virtual-text",
+				opts = {},
+			},
+		},
 		cmd = { "BreakpointToggle", "Debug", "DapREPL" },
-	},
-	{
-		"rcarriga/nvim-dap-ui",
-		dependencies = "nvim-dap",
-		opts = {},
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
@@ -149,43 +247,6 @@ return {
 	},
 	{ "Civitasv/cmake-tools.nvim", lazy = true, opts = { cmake_always_use_terminal = true } },
 	"folke/neodev.nvim",
-	{
-		"nvim-treesitter/nvim-treesitter",
-		dependencies = {
-			"nvim-treesitter/nvim-treesitter-refactor",
-			"RRethy/nvim-treesitter-textsubjects",
-			"RRethy/nvim-treesitter-endwise",
-		},
-		build = ":TSUpdate",
-		event = "VeryLazy",
-		config = function()
-			require("settings.treesitter")
-		end,
-	},
-	{
-		"danymat/neogen",
-		dependencies = "nvim-treesitter",
-		config = function()
-			require("settings.neogen")
-		end,
-		keys = { "<localleader>d", "<localleader>df", "<localleader>dc" },
-	},
-	"L3MON4D3/LuaSnip",
-	{ "rafamadriz/friendly-snippets", lazy = false },
-	{
-		"numToStr/Comment.nvim",
-		event = "VeryLazy",
-		opts = {},
-	},
-	{
-		"andymass/vim-matchup",
-		init = function()
-			require("settings.matchup")
-		end,
-		event = "User ActuallyEditing",
-	},
-	{ "romainl/vim-cool", event = "VeryLazy" },
-	{ "wellle/targets.vim", event = "VeryLazy" },
 	{
 		"mbbill/undotree",
 		cmd = "UndotreeToggle",
@@ -246,28 +307,21 @@ return {
 			})
 		end,
 	},
+	"L3MON4D3/LuaSnip",
+	{ "rafamadriz/friendly-snippets", lazy = false },
 	{
-		"nvim-telescope/telescope.nvim",
-		dependencies = {
-			"nvim-lua/popup.nvim",
-			"nvim-lua/plenary.nvim",
-			"telescope-fzf-native.nvim",
-			"nvim-telescope/telescope-ui-select.nvim",
-		},
+		"numToStr/Comment.nvim",
+		event = "VeryLazy",
+		opts = {},
+	},
+	{
+		"andymass/vim-matchup",
 		init = function()
-			require("settings.telescope_setup")
+			require("settings.matchup")
 		end,
-		config = function()
-			require("settings.telescope")
-		end,
-		cmd = "Telescope",
+		event = "User ActuallyEditing",
 	},
-	{
-		"nvim-telescope/telescope-fzf-native.nvim",
-		build = "make",
-	},
-	"crispgm/telescope-heading.nvim",
-	"nvim-telescope/telescope-file-browser.nvim",
+	{ "wellle/targets.vim", event = "VeryLazy" },
 	{
 		"stevearc/aerial.nvim",
 		opts = {
@@ -300,6 +354,20 @@ return {
 			require("toggleterm").setup({ open_mapping = [[<c-\>]] })
 		end,
 		keys = [[<c-\>/]],
+	},
+	{
+		"willothy/flatten.nvim",
+		opts = {
+			window = { open = "alternate" },
+			post_open = function(_bufnr, winnr, _ft, is_blocking)
+				if is_blocking then
+					require("toggleterm").toggle(0)
+				else
+					vim.api.nvim_set_current_win(winnr)
+				end
+			end,
+		},
+		event = "TermOpen",
 	},
 	{
 		"beauwilliams/focus.nvim",
@@ -501,6 +569,140 @@ return {
 		"SmiteshP/nvim-navic",
 		dependencies = "neovim/nvim-lspconfig",
 		opts = { lazy_update_context = true },
+	},
+	{
+		"nanozuki/tabby.nvim",
+		event = "User ActuallyEditing",
+		config = function()
+			local theme = {
+				fill = { fg = "#222222", bg = "#222222" },
+				current_tab = { fg = "#e9e9e9", bg = "#222222" },
+				tab = { fg = "#666666", bg = "#222222" },
+			}
+			local tabby_api = require("tabby.module.api")
+			require("tabby.tabline").set(function(line)
+				local num_tabs = #tabby_api.get_tabs()
+				local tabs = line.tabs().foreach(function(tab)
+					local hl = tab.is_current() and theme.current_tab or theme.tab
+					local tab_separator = (tab.number() < num_tabs)
+							and line.sep(
+								"／ ",
+								{ fg = "#222222", bg = "#e9e9e9", style = "bold" },
+								{ fg = "#e9e9e9", bg = "#222222", style = "bold" }
+							)
+						or line.sep(
+							"",
+							{ fg = "#222222", bg = "#e9e9e9", style = "bold" },
+							{ fg = "#e9e9e9", bg = "#222222", style = "bold" }
+						)
+					local num_wins = #tabby_api.get_tab_wins(tab.id)
+					local win_idx = 1
+					return {
+						tab.wins().foreach(function(win)
+							local window_separator = (win_idx < num_wins) and "  " or ""
+							win_idx = win_idx + 1
+							return {
+								win.file_icon(),
+								win.buf_name(),
+								win.buf().is_changed() and "●" or "",
+								window_separator,
+								margin = " ",
+								hl = hl,
+							}
+						end),
+						tab_separator,
+						hl = hl,
+					}
+				end)
+				return {
+					line.spacer(),
+					tabs,
+					line.spacer(),
+					buf_name = { mode = "unique" },
+					hl = theme.fill,
+				}
+			end)
+		end,
+	},
+	{
+		"stevearc/overseer.nvim",
+		config = true,
+		cmd = { "OverseerRun", "OverseerToggle" },
+	},
+	{
+		"chrisgrieser/nvim-various-textobjs",
+		opts = { useDefaultKeymaps = true },
+	},
+	{
+		"folke/persistence.nvim",
+		event = "BufReadPre",
+		module = "persistence",
+		config = function()
+			require("persistence").setup({
+				dir = vim.fn.expand(vim.fn.stdpath("config") .. "/session/"),
+				options = { "buffers", "curdir", "tabpages", "winsize" },
+			})
+		end,
+	},
+	{
+		"nanozuki/tabby.nvim",
+		event = "User ActuallyEditing",
+		config = function()
+			local theme = {
+				fill = { fg = "#222222", bg = "#222222" },
+				current_tab = { fg = "#e9e9e9", bg = "#222222" },
+				tab = { fg = "#666666", bg = "#222222" },
+			}
+			local tabby_api = require("tabby.module.api")
+			require("tabby.tabline").set(function(line)
+				local num_tabs = #tabby_api.get_tabs()
+				local tabs = line.tabs().foreach(function(tab)
+					local hl = tab.is_current() and theme.current_tab or theme.tab
+					local tab_separator = (tab.number() < num_tabs)
+							and line.sep(
+								"／ ",
+								{ fg = "#222222", bg = "#e9e9e9", style = "bold" },
+								{ fg = "#e9e9e9", bg = "#222222", style = "bold" }
+							)
+						or line.sep(
+							"",
+							{ fg = "#222222", bg = "#e9e9e9", style = "bold" },
+							{ fg = "#e9e9e9", bg = "#222222", style = "bold" }
+						)
+					local num_wins = #tabby_api.get_tab_wins(tab.id)
+					local win_idx = 1
+					return {
+						tab.wins().foreach(function(win)
+							local window_separator = (win_idx < num_wins) and "  " or ""
+							win_idx = win_idx + 1
+							return {
+								win.file_icon(),
+								win.buf_name(),
+								win.buf().is_changed() and "●" or "",
+								window_separator,
+								margin = " ",
+								hl = hl,
+							}
+						end),
+						tab_separator,
+						hl = hl,
+					}
+				end)
+				return {
+					line.spacer(),
+					tabs,
+					line.spacer(),
+					buf_name = { mode = "unique" },
+					hl = theme.fill,
+				}
+			end)
+		end,
+	},
+	{
+		"linux-cultist/venv-selector.nvim",
+		cmd = "VenvSelect",
+		opts = {},
+		keys = { { "<leader>pv", "<cmd>:VenvSelect<cr>", desc = "Select VirtualEnv" } },
 	},
 	{
 		"chrisgrieser/nvim-rulebook",
