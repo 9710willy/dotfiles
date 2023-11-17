@@ -6,7 +6,7 @@ local bg_color = '#222222'
 local fg_color = '#e9e9e9'
 
 local function setup_colors()
-  if vim.g.colors_name ~= 'nazgul' then
+  if vim.g.colors_name ~= 'gruvbox' then
     local statusline_hl = vim.api.nvim_get_hl(0, { name = 'Statusline', link = false })
     bg_color = statusline_hl.bg
     fg_color = statusline_hl.fg
