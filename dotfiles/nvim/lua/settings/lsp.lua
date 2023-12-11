@@ -69,14 +69,13 @@ local servers = {
 	bashls = {},
 	neocmake = {},
 	cssls = {
-		cmd = { "vscode-css-languageserver", "--stdio" },
+		cmd = { "vscode-css-language-server", "--stdio" },
 		filetypes = { "css", "scss", "less", "sass" },
 		root_dir = lspconfig.util.root_pattern("package.json", ".git"),
 	},
 	dockerls = {},
-	-- ghcide = {},
-	html = { cmd = { "vscode-html-languageserver", "--stdio" } },
-	jsonls = { cmd = { "vscode-json-languageserver", "--stdio" } },
+	html = { cmd = { "vscode-html-language-server", "--stdio" } },
+	jsonls = { cmd = { "vscode-json-language-server", "--stdio" } },
 	julials = {
 		on_new_config = function(new_config, _)
 			local julia = vim.fn.expand("~/.julia/environments/nvim-lspconfig/bin/julia")
