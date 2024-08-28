@@ -42,3 +42,4 @@ require("lazy").setup("plugins", {
 require("settings.mappings")
 require("settings.autocmds")
 require("settings.config")
+require("settings.colors")

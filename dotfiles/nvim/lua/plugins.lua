@@ -1,13 +1,9 @@
+--# selene: allow(mixed_table)
 return {
 	{
 		"ojroques/nvim-bufdel",
 		cmd = "BufDel",
 		opts = {},
-	},
-	{
-		"folke/which-key.nvim",
-		opts = {},
-		event = "BufReadPost",
 	},
 	{ "chaoren/vim-wordmotion", event = "VeryLazy" },
 	{
@@ -76,10 +72,43 @@ return {
 	},
 	{
 		"echasnovski/mini.nvim",
-		version = false,
-		event = "User ActuallyEditing",
+        version = false,
+    event = { 'BufReadPost', 'BufNewFile' },
+    init = function()
+      require('mini.sessions').setup {}
+      vim.api.nvim_set_hl(0, 'MiniStarterSection', { link = 'WhiteHover' })
+      vim.api.nvim_set_hl(0, 'MiniStarterItemPrefix', { link = 'Underlined' })
+      vim.api.nvim_set_hl(0, 'MiniStarterItemBullet', { link = 'Normal' })
+      vim.api.nvim_set_hl(
+        0,
+        'MiniStarterInactive',
+        { fg = '#666666', bg = '#141414', italic = true, strikethrough = true }
+      )
+      local starter = require 'mini.starter'
+      starter.setup {
+        header = '',
+        footer = '',
+        items = {
+          {
+            { name = 'new file', action = 'ene | startinsert', section = 'Actions' },
+            { name = 'update plugins', action = 'Lazy sync', section = 'Actions' },
+            { name = 'git', action = 'Neogit', section = 'Actions' },
+            { name = 'time startup', action = 'Lazy profile', section = 'Actions' },
+            { name = 'quit', action = 'qall', section = 'Actions' },
+          },
+          starter.sections.recent_files(5, false),
+          starter.sections.recent_files(5, true),
+          starter.sections.sessions(5, true),
+        },
+        content_hooks = {
+          -- require('utils').icon_hook,
+          starter.gen_hook.adding_bullet '',
+          starter.gen_hook.aligning('center', 'center'),
+        },
+      }
+    end,
 		config = function()
-			require("mini.surround").setup({ search_method = "cover_or_nearest" })
+      require('mini.surround').setup { search_method = 'cover_or_nearest', respect_selection_type = true }
 			require("mini.align").setup({ mappings = { start = "", start_with_preview = "g=" } })
 			require("mini.ai").setup({ search_method = "cover_or_nearest" })
 			require("mini.bracketed").setup({})
@@ -91,32 +120,87 @@ return {
 			})
 			require("mini.move").setup({})
 			require("mini.splitjoin").setup({ mappings = { toggle = "gJ" } })
+            require('mini.pairs').setup {
+        mappings = {
+          -- Prevents the action if the cursor is just before any character or next to a "\".
+          ['('] = { action = 'open', pair = '()', neigh_pattern = '[^\\][%s%)%]%}]' },
+          ['['] = { action = 'open', pair = '[]', neigh_pattern = '[^\\][%s%)%]%}]' },
+          ['{'] = { action = 'open', pair = '{}', neigh_pattern = '[^\\][%s%)%]%}]' },
+          -- This is default (prevents the action if the cursor is just next to a "\").
+          [')'] = { action = 'close', pair = '()', neigh_pattern = '[^\\].' },
+          [']'] = { action = 'close', pair = '[]', neigh_pattern = '[^\\].' },
+          ['}'] = { action = 'close', pair = '{}', neigh_pattern = '[^\\].' },
+          -- Prevents the action if the cursor is just before or next to any character.
+          ['"'] = { action = 'closeopen', pair = '""', neigh_pattern = '[^%w][^%w]', register = { cr = false } },
+          ["'"] = { action = 'closeopen', pair = "''", neigh_pattern = '[^%w][^%w]', register = { cr = false } },
+          ['`'] = { action = 'closeopen', pair = '``', neigh_pattern = '[^%w][^%w]', register = { cr = false } },
+        },
+      }
+      require('mini.operators').setup {}
+      require('mini.hipatterns').setup {
+        highlighters = { hex_color = require('mini.hipatterns').gen_highlighter.hex_color() },
+      }
+      local miniclue = require 'mini.clue'
+      miniclue.setup {
+        triggers = {
+          -- Leader triggers
+          { mode = 'n', keys = '<Leader>' },
+          { mode = 'x', keys = '<Leader>' },
+
+          -- Built-in completion
+          { mode = 'i', keys = '<C-x>' },
+
+          -- `g` key
+          { mode = 'n', keys = 'g' },
+          { mode = 'x', keys = 'g' },
+
+          -- Marks
+          { mode = 'n', keys = "'" },
+          { mode = 'n', keys = '`' },
+          { mode = 'x', keys = "'" },
+          { mode = 'x', keys = '`' },
+
+          -- Registers
+          { mode = 'n', keys = '"' },
+          { mode = 'x', keys = '"' },
+          { mode = 'i', keys = '<C-r>' },
+          { mode = 'c', keys = '<C-r>' },
+
+          -- Window commands
+          { mode = 'n', keys = '<C-w>' },
+
+          -- `z` key
+          { mode = 'n', keys = 'z' },
+          { mode = 'x', keys = 'z' },
+        },
+
+        clues = {
+          -- Enhance this by adding descriptions for <Leader> mapping groups
+          miniclue.gen_clues.builtin_completion(),
+          miniclue.gen_clues.g(),
+          miniclue.gen_clues.marks(),
+          miniclue.gen_clues.registers(),
+          miniclue.gen_clues.windows(),
+          miniclue.gen_clues.z(),
+        },
+      }
 		end,
-	},
-	{
-		"windwp/nvim-autopairs",
-		opts = {
-			enable_check_bracket_line = false,
-			ignored_next_char = "[%w%.]",
-			fast_wrap = {},
-		},
-		event = "BufReadPost",
 	},
 	{
 		"andymass/vim-matchup",
-		init = function()
+		config = function()
 			require("settings.matchup")
 		end,
-		lazy = false,
+    event = { 'BufReadPost', 'BufNewFile' },
 	},
 	{ "romainl/vim-cool", event = "VeryLazy" },
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = {
-			"nvim-lua/popup.nvim",
 			"nvim-lua/plenary.nvim",
-			"telescope-fzf-native.nvim",
-			"nvim-telescope/telescope-ui-select.nvim",
+      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+      'nvim-telescope/telescope-ui-select.nvim',
+      'debugloop/telescope-undo.nvim',
 		},
 		init = function()
 			require("settings.telescope_setup")
@@ -126,12 +210,6 @@ return {
 		end,
 		cmd = "Telescope",
 	},
-	{
-		"nvim-telescope/telescope-fzf-native.nvim",
-		build = "make",
-	},
-	"crispgm/telescope-heading.nvim",
-	"nvim-telescope/telescope-file-browser.nvim",
 	{
 		"ellisonleao/gruvbox.nvim",
 		config = function()
@@ -144,7 +222,7 @@ return {
 	{
 		"smjonas/inc-rename.nvim",
 		opts = {},
-		event = "BufReadPost",
+    event = { 'BufReadPost', 'BufNewFile' },
 	},
 	{
 		"folke/trouble.nvim",
@@ -152,19 +230,20 @@ return {
 		opts = {},
 	},
 	"p00f/clangd_extensions.nvim",
-	{
-		"nvim-treesitter/nvim-treesitter",
-		dependencies = {
-			"nvim-treesitter/nvim-treesitter-refactor",
-			"RRethy/nvim-treesitter-textsubjects",
-			"RRethy/nvim-treesitter-endwise",
-		},
-		build = ":TSUpdate",
-		event = "VeryLazy",
-		config = function()
-			require("settings.treesitter")
-		end,
-	},
+  {
+  'nvim-treesitter/nvim-treesitter',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter-refactor',
+      'RRethy/nvim-treesitter-textsubjects',
+      'RRethy/nvim-treesitter-endwise',
+      'windwp/nvim-ts-autotag',
+    },
+    build = ':TSUpdate',
+    event = { 'BufReadPost', 'BufNewFile' },
+    config = function()
+      require 'settings.treesitter'
+    end,
+  },
 	{
 		"danymat/neogen",
 		dependencies = "nvim-treesitter",
@@ -178,15 +257,12 @@ return {
 		dependencies = {
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-nvim-lsp",
-			"onsails/lspkind.nvim",
 			"hrsh7th/cmp-nvim-lsp-signature-help",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-nvim-lua",
-			"saadparwaiz1/cmp_luasnip",
 			"lukas-reineke/cmp-under-comparator",
 			"hrsh7th/cmp-cmdline",
 			"hrsh7th/cmp-nvim-lsp-document-symbol",
-			"doxnit/cmp-luasnip-choice",
 		},
 		config = function()
 			require("settings.cmp")
@@ -203,6 +279,7 @@ return {
 		end,
 		dependencies = {
 			"jbyuki/one-small-step-for-vimkind",
+      "nvim-neotest/nvim-nio",
 			{
 				"rcarriga/nvim-dap-ui",
 				opts = {},
@@ -246,14 +323,7 @@ return {
 		},
 	},
 	{ "Civitasv/cmake-tools.nvim", lazy = true, opts = { cmake_always_use_terminal = true } },
-	"folke/neodev.nvim",
-	{
-		"mbbill/undotree",
-		cmd = "UndotreeToggle",
-		init = function()
-			vim.g.undotree_SetFocusWhenToggle = 1
-		end,
-	},
+  { 'folke/neodev.nvim', opts = { lspconfig = false, library = { plugins = { 'nvim-dap-ui' }, types = true } } },
 
 	{
 		"lewis6991/gitsigns.nvim",
@@ -264,15 +334,19 @@ return {
 		event = "VeryLazy",
 	},
 	{
-		"sindrets/diffview.nvim",
-		dependencies = "nvim-lua/plenary.nvim",
-	},
-	{
 		"NeogitOrg/neogit",
+    branch = 'master',
 		cmd = "Neogit",
 		config = function()
 			require("settings.neogit")
 		end,
+    dependencies = {
+      {
+        'sindrets/diffview.nvim',
+        dependencies = 'nvim-lua/plenary.nvim',
+      },
+      'telescope.nvim',
+    },
 	},
 	{
 		"akinsho/git-conflict.nvim",
@@ -284,11 +358,12 @@ return {
 		"lewis6991/hover.nvim",
 		event = "BufReadPost",
 		config = function()
-			require("hover").setup({
+			require("hover").setup{
 				init = function()
 					require("hover.providers.lsp")
+          require 'hover.providers.dap'
 				end,
-			})
+			}
 
 			vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
 			vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
@@ -307,8 +382,8 @@ return {
 			})
 		end,
 	},
-	"L3MON4D3/LuaSnip",
-	{ "rafamadriz/friendly-snippets", lazy = false },
+  { 'rafamadriz/friendly-snippets' },
+  { 'garymjr/nvim-snippets', opts = { friendly_snippets = true } },
 	{
 		"numToStr/Comment.nvim",
 		event = "VeryLazy",
@@ -377,19 +452,18 @@ return {
 		event = "VeryLazy",
 	},
 	{
-		"hkupty/iron.nvim",
+    'vigemus/iron.nvim',
 		cmd = { "IronRepl", "IronFocus" },
 		init = function()
-			vim.keymap.set("n", "<leader>rs", "<cmd>IronRepl<cr>")
-			vim.keymap.set("n", "<leader>rr", "<cmd>IronRestart<cr>")
-			vim.keymap.set("n", "<leader>rf", "<cmd>IronFocus<cr>")
-			vim.keymap.set("n", "<leader>rh", "<cmd>IronHide<cr>")
+      vim.keymap.set('n', '<leader>rs', '<cmd>IronRepl<cr>', {desc = "Open Iron REPL"})
+      vim.keymap.set('n', '<leader>rr', '<cmd>IronRestart<cr>', {desc = "Restart Iron REPL"})
+      vim.keymap.set('n', '<leader>rf', '<cmd>IronFocus<cr>', {desc = "Focus Iron REPL"})
+      vim.keymap.set('n', '<leader>rh', '<cmd>IronHide<cr>', {desc = "Hide Iron REPL"})
 		end,
-		dependencies = "which-key.nvim",
 		config = function()
 			require("iron.core").setup({
 				config = {
-					repl_open_cmd = require("iron.view").right("40%"),
+          repl_open_cmd = require('iron.view').center '40%',
 					repl_definition = {
 						python = require("iron.fts.python").ptipython,
 						ocaml = require("iron.fts.ocaml").utop,
@@ -416,7 +490,7 @@ return {
 	},
 	{
 		"utilyre/barbecue.nvim",
-		event = "User ActuallyEditing",
+    event = { 'BufReadPost', 'BufNewFile' },
 		name = "barbecue",
 		version = "*",
 		dependencies = {
@@ -470,7 +544,7 @@ return {
 				tex = { "chktex" },
 				javascript = { "eslint_d" },
 				typescript = { "eslint_d" },
-				NeogitCommitMessage = { "gitlint" },
+        NeogitCommitMessage = { 'gitlint' },
 				c = { "flawfinder" },
 				cpp = { "flawfinder" },
 				lua = { "selene" },
@@ -480,11 +554,12 @@ return {
 				vim = { "vint" },
 			}
 
-			vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-				callback = function()
-					require("lint").try_lint()
-				end,
-			})
+      vim.api.nvim_create_autocmd({ 'BufWritePost' }, {
+        pattern = { '.github/**/*.yaml', '.github/**/*.yml' },
+        callback = function()
+          require('lint').try_lint 'actionlint'
+        end,
+      })
 		end,
 	},
 	{
@@ -632,17 +707,7 @@ return {
 	{
 		"chrisgrieser/nvim-various-textobjs",
 		opts = { useDefaultKeymaps = true },
-	},
-	{
-		"folke/persistence.nvim",
-		event = "BufReadPre",
-		module = "persistence",
-		config = function()
-			require("persistence").setup({
-				dir = vim.fn.expand(vim.fn.stdpath("config") .. "/session/"),
-				options = { "buffers", "curdir", "tabpages", "winsize" },
-			})
-		end,
+    event = { 'BufReadPost', 'BufNewFile' },
 	},
 	{
 		"nanozuki/tabby.nvim",
