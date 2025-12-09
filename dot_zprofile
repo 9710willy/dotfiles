@@ -1,7 +1,0 @@
-# Add .NET Core SDK tools
-export PATH="$PATH:/Users/will/.dotnet/tools"
-
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-eval $(/opt/homebrew/bin/brew shellenv)

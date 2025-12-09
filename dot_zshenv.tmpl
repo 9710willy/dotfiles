@@ -1,0 +1,11 @@
+{{- $brewPrefix := "/usr/local" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{-   $brewPrefix = "/opt/homebrew" -}}
+{{- end -}}
+if [[ -n $VIRTUAL_ENV && -e "${VIRTUAL_ENV}/bin/activate" ]]; then
+  source "${VIRTUAL_ENV}/bin/activate"
+fi
+
+# PATH tweaks
+export PATH="{{ $brewPrefix }}/bin:/usr/local/bin:{{ .chezmoi.homeDir }}/Library/Python/3.9/bin:{{ .chezmoi.homeDir }}/.cargo/bin:$HOME/langservers/lua-language-server/bin:$PATH"
+
