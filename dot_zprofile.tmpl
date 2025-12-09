@@ -1,0 +1,11 @@
+{{- $brewPrefix := "/usr/local" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{-   $brewPrefix = "/opt/homebrew" -}}
+{{- end -}}
+# Add .NET Core SDK tools
+export PATH="$PATH:{{ .chezmoi.homeDir }}/.dotnet/tools"
+
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval $({{ $brewPrefix }}/bin/brew shellenv)

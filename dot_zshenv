@@ -1,7 +1,0 @@
-if [[ -n $VIRTUAL_ENV && -e "${VIRTUAL_ENV}/bin/activate" ]]; then
-  source "${VIRTUAL_ENV}/bin/activate"
-fi
-
-# PATH tweaks
-export PATH="/opt/homebrew/bin:/usr/local/bin:/Users/will/Library/Python/3.9/bin:/Users/will/.cargo/bin:$HOME/langservers/lua-language-server/bin:$PATH"
-

@@ -706,7 +706,7 @@ return {
 	},
 	{
 		"chrisgrieser/nvim-various-textobjs",
-		opts = { useDefaultKeymaps = true },
+		opts = { keymaps = { useDefaults = true } },
     event = { 'BufReadPost', 'BufNewFile' },
 	},
 	{

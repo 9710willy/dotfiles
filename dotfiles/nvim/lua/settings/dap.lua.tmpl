@@ -1,3 +1,7 @@
+{{- $brewPrefix := "/usr/local" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{-   $brewPrefix = "/opt/homebrew" -}}
+{{- end -}}
 local dap = require("dap")
 
 -- Debugpy
@@ -18,7 +22,7 @@ dap.configurations.python = {
 			if venv_path ~= vim.NIL and venv_path ~= "" then
 				return venv_path .. "/bin/python"
 			else
-				return "/usr/bin/python"
+				return "{{ $brewPrefix }}/bin/python3"
 			end
 		end,
 	},
@@ -52,7 +56,7 @@ dap.configurations.lua = {
 -- lldb
 dap.adapters.lldb = {
 	type = "executable",
-	command = "/usr/bin/lldb-vscode",
+	command = "{{ $brewPrefix }}/opt/llvm/bin/lldb-vscode",
 	name = "lldb",
 }
 

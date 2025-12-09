@@ -1,3 +1,7 @@
+{{- $brewPrefix := "/usr/local" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{-   $brewPrefix = "/opt/homebrew" -}}
+{{- end -}}
 local lspconfig = require("lspconfig")
 
 local lsp = vim.lsp
@@ -177,7 +181,7 @@ local servers = {
     },
   },
   ltex = {
-    cmd = { "/usr/bin/ltex-ls" },
+    cmd = { "{{ $brewPrefix }}/bin/ltex-ls" },
     on_attach = function(client, bufnr)
       require("ltex_extra").setup({})
     end,
@@ -185,11 +189,10 @@ local servers = {
       ltex = {
         checkFrequency = "save",
         additionalRules = { enablePickyRules = true },
-        ["ltex-ls"] = { path = "/opt/ltex-ls" },
       },
     },
   },
-  tsserver = {},
+  ts_ls = {},
   vimls = {},
 }
 
