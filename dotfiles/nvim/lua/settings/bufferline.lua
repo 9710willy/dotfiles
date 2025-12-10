@@ -1,4 +1,3 @@
-local map = vim.api.nvim_set_keymap
 local bufferline = require 'bufferline'
 
 local bar_bg = '#1f1f1f'
@@ -106,6 +105,4 @@ bufferline.setup {
   highlights = highlights,
 }
 
-local opts = { silent = true, nowait = true, noremap = true }
-map('n', 'gb', '<cmd>BufferLinePick<cr>', opts)
-map('n', '<leader>d', '<cmd>bdelete!<cr>', opts)
+vim.keymap.set('n', 'gb', '<cmd>BufferLinePick<cr>', { silent = true, nowait = true })

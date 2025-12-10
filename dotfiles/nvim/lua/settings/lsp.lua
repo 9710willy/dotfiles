@@ -1,5 +1,4 @@
 local lsp = vim.lsp
-local buf_keymap = vim.api.nvim_buf_set_keymap
 
 local border = {
   { "🭽", "FloatBorder" },
@@ -15,7 +14,9 @@ local border = {
 vim.diagnostic.config {
   virtual_lines = { only_current_line = true },
   virtual_text = false,
-  { float = { border = border } },
+  float = { border = border },
+  update_in_insert = false,
+  underline = true,
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = '',
@@ -32,46 +33,30 @@ vim.diagnostic.config {
   },
 }
 
-lsp.handlers['textDocument/publishDiagnostics'] = lsp.with(lsp.diagnostic.on_publish_diagnostics, {
-  virtual_text = false,
-  signs = true,
-  update_in_insert = false,
-  underline = true,
-})
+local function setup_keymaps(client, bufnr)
+  local opts = { buffer = bufnr, silent = true }
 
-local keymap_opts = { noremap = true, silent = true }
-local function setup_keymaps(client, _bufnr)
-  buf_keymap(0, "n", "gD", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.declaration }, keymap_opts))
-  buf_keymap(0, "n", "gd", "<cmd>Glance definitions<CR>", keymap_opts)
-  buf_keymap(0, "n", "gi", "<cmd>Glance implementations<CR>", keymap_opts)
-  buf_keymap(0, "n", "gS", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.signature_help }, keymap_opts))
-  buf_keymap(0, "n", "gTD", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.type_definition }, keymap_opts))
-  buf_keymap(0, "n", "<leader>rn", "", {
-    callback = function()
-      return ":IncRename " .. vim.fn.expand("<cword>")
-    end,
-    expr = true,
-  })
-  buf_keymap(0, "v", "<leader>rn", "", {
-    callback = function()
-      return ":IncRename " .. vim.fn.expand("<cword>")
-    end,
-    expr = true,
-  })
-  buf_keymap(0, "n", "gr", "<cmd>Glance references<CR>", keymap_opts)
-  buf_keymap(0, "n", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.code_action }, keymap_opts))
-  buf_keymap(0, "v", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.code_action }, keymap_opts))
+  vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+  vim.keymap.set("n", "gd", "<cmd>Glance definitions<CR>", opts)
+  vim.keymap.set("n", "gi", "<cmd>Glance implementations<CR>", opts)
+  vim.keymap.set("n", "gS", vim.lsp.buf.signature_help, opts)
+  vim.keymap.set("n", "gTD", vim.lsp.buf.type_definition, opts)
+  vim.keymap.set({ "n", "v" }, "<leader>rn", function()
+    return ":IncRename " .. vim.fn.expand("<cword>")
+  end, { buffer = bufnr, expr = true })
+  vim.keymap.set("n", "gr", "<cmd>Glance references<CR>", opts)
+  vim.keymap.set({ "n", "v" }, "gA", vim.lsp.buf.code_action, opts)
 
   if client.server_capabilities.documentHighlightProvider then
     local lsp_aucmds = vim.api.nvim_create_augroup("lsp_aucmds", { clear = true })
     vim.api.nvim_create_autocmd("CursorHold", {
       group = lsp_aucmds,
-      buffer = 0,
+      buffer = bufnr,
       callback = vim.lsp.buf.document_highlight,
     })
     vim.api.nvim_create_autocmd("CursorMoved", {
       group = lsp_aucmds,
-      buffer = 0,
+      buffer = bufnr,
       callback = vim.lsp.buf.clear_references,
     })
   end
@@ -85,10 +70,9 @@ local function on_attach(client, bufnr)
     require("nvim-navic").attach(client, bufnr)
   end
 
-  vim.lsp.inlay_hint.enable(
-    client.server_capabilities.inlayHintProvider ~= nil
-    and client.server_capabilities.inlayHintProvider ~= false
-  )
+  if client.server_capabilities.inlayHintProvider then
+    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+  end
 
   setup_keymaps(client, bufnr)
 end

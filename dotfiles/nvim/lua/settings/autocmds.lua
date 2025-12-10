@@ -22,9 +22,10 @@ autocmd('TextYankPost', {
 autocmd('FileType', { group = misc_aucmds, pattern = 'qf', command = 'set nobuflisted' })
 vim.cmd [[silent! autocmd! FileExplorer *]]
 autocmd('BufEnter', {
+  group = misc_aucmds,
   pattern = '*',
   callback = function(args)
-    local file_info = vim.loop.fs_stat(args.file)
+    local file_info = vim.uv.fs_stat(args.file)
     if file_info and file_info.type == 'directory' then
       require 'neo-tree'
       return true
@@ -39,6 +40,8 @@ autocmd('BufReadPre', {
   once = true,
 })
 
+-- Create barbecue updater group once, outside the callback
+local barbecue_group = augroup('barbecue.updater', { clear = true })
 autocmd('BufReadPost', {
   group = misc_aucmds,
   once = true,
@@ -51,7 +54,7 @@ autocmd('BufReadPost', {
       'InsertLeave',
       'BufModifiedSet',
     }, {
-      group = vim.api.nvim_create_augroup('barbecue.updater', {}),
+      group = barbecue_group,
       callback = function()
         require('barbecue.ui').update()
       end,

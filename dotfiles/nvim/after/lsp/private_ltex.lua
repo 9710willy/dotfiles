@@ -1,5 +1,6 @@
 return {
-  cmd = { "/opt/homebrew/bin/ltex-ls" },
+  cmd = { "ltex-ls" },
+  filetypes = { "bib", "gitcommit", "markdown", "org", "plaintex", "rst", "rnoweb", "tex", "pandoc", "quarto", "rmd", "context" },
   on_attach = function(client, bufnr)
     require("ltex_extra").setup({})
   end,

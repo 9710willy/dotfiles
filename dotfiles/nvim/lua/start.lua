@@ -27,7 +27,7 @@ local function recent_files()
   local oldfiles = {}
   local f_mod = vim.fn.fnamemodify
   local f_esc = vim.fn.fnameescape
-  local f_stat = vim.loop.fs_stat
+  local f_stat = vim.uv.fs_stat
   local unfiltered_oldfiles = vim.v.oldfiles
   for _, file in ipairs(unfiltered_oldfiles) do
     if #oldfiles >= counter then
@@ -221,23 +221,19 @@ local function handle_cr()
 end
 
 local function setup_keys()
+  local opts = { buffer = 0, silent = true }
   -- First, the nav keys
-  local map = vim.api.nvim_buf_set_keymap
-  map(0, 'n', 'h', '<NOP>', { noremap = true, silent = true })
-  map(0, 'n', 'l', '<NOP>', { noremap = true, silent = true })
-  map(0, 'n', 'j', '', { noremap = true, silent = true, callback = handle_j })
-  map(0, 'n', 'k', '', { noremap = true, silent = true, callback = handle_k })
-  map(0, 'n', '<cr>', '', { noremap = true, silent = true, callback = handle_cr })
+  vim.keymap.set('n', 'h', '<NOP>', opts)
+  vim.keymap.set('n', 'l', '<NOP>', opts)
+  vim.keymap.set('n', 'j', handle_j, opts)
+  vim.keymap.set('n', 'k', handle_k, opts)
+  vim.keymap.set('n', '<cr>', handle_cr, opts)
 
   -- Then, the defined keybindings
   for _, binding in ipairs(keybindings) do
-    map(0, 'n', tostring(binding.key), '', {
-      noremap = true,
-      silent = true,
-      callback = function()
-        do_binding(binding)
-      end,
-    })
+    vim.keymap.set('n', tostring(binding.key), function()
+      do_binding(binding)
+    end, opts)
   end
 end
 
