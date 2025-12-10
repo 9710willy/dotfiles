@@ -1,4 +1,5 @@
 return {
+  cmd = { "lua-language-server" },
   filetypes = { "lua" },
   before_init = require("neodev.lsp").before_init,
   single_file_support = true,
