@@ -67,15 +67,21 @@ local function setup_keymaps(client, _bufnr)
   })
   buf_keymap(0, "n", "gr", "<cmd>Glance references<CR>", keymap_opts)
   buf_keymap(0, "n", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.code_action }, keymap_opts))
-  buf_keymap(0, "v", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.range_code_action }, keymap_opts))
+  buf_keymap(0, "v", "gA", "", vim.tbl_extend("keep", { callback = vim.lsp.buf.code_action }, keymap_opts))
 
-  -- TODO: Use the nicer new API for autocommands
-  cmd("augroup lsp_aucmds")
   if client.server_capabilities.documentHighlightProvider then
-    cmd("au CursorHold <buffer> lua vim.lsp.buf.document_highlight()")
-    cmd("au CursorMoved <buffer> lua vim.lsp.buf.clear_references()")
+    local lsp_aucmds = vim.api.nvim_create_augroup("lsp_aucmds", { clear = true })
+    vim.api.nvim_create_autocmd("CursorHold", {
+      group = lsp_aucmds,
+      buffer = 0,
+      callback = vim.lsp.buf.document_highlight,
+    })
+    vim.api.nvim_create_autocmd("CursorMoved", {
+      group = lsp_aucmds,
+      buffer = 0,
+      callback = vim.lsp.buf.clear_references,
+    })
   end
-  cmd("augroup END")
 end
 
 local servers = {
@@ -108,7 +114,7 @@ local servers = {
       },
     },
   },
-  ruff_lsp = {},
+  ruff = {},
   rust_analyzer = {
     settings = {
       ["rust-analyzer"] = {
