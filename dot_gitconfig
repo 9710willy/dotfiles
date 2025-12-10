@@ -1,8 +1,5 @@
 [user]
-	name = will.lee
-	email = will.lee@five9.com
-	signingkey = C6AB6CCCE1BE11B5
+	name = 9710willy
+	email = 9710willy@users.noreply.github.com
 [commit]
-	gpgsign = true
-[gpg]
-	program = gpg
+	gpgsign = false
