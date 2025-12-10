@@ -1,4 +1,5 @@
 return {
+  filetypes = { "tex", "plaintex", "bib" },
   settings = {
     texlab = {
       chktex = { onOpenAndSave = true },
