@@ -21,7 +21,18 @@ chezmoi apply  # Apply changes
 - **Neovim** - Full LSP config, completion, telescope, etc.
 - **Tmux** - With vim-tmux-navigator integration
 - **Zsh** - Powerlevel10k prompt, syntax highlighting, autosuggestions
-- **Git** - GPG signing configured
+- **Git** - Identity templated (work vs personal)
+
+## Work Machine Setup
+
+For work machines, add to `~/.config/chezmoi/chezmoi.toml`:
+
+```toml
+[data]
+    isWorkMachine = true
+```
+
+This configures git with work email and GPG signing. Personal machines use GitHub noreply email.
 
 ## Bootstrap Scripts
 
