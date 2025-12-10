@@ -1,0 +1,8 @@
+[user]
+	name = will.lee
+	email = will.lee@five9.com
+	signingkey = C6AB6CCCE1BE11B5
+[commit]
+	gpgsign = true
+[gpg]
+	program = gpg
