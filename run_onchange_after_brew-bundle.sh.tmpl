@@ -5,5 +5,5 @@
 # This comment ensures the script re-runs when Brewfile changes
 
 echo "Installing Homebrew packages..."
-brew bundle --no-lock --file="{{ .chezmoi.sourceDir }}/Brewfile"
+brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
 {{ end -}}
