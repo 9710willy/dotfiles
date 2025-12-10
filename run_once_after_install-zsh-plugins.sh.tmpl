@@ -1,0 +1,33 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Install Powerlevel10k
+if [[ ! -d "$HOME/powerlevel10k" ]]; then
+    echo "Installing Powerlevel10k..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/powerlevel10k"
+fi
+
+# Create oh-my-zsh custom plugins directory
+ZSH_PLUGINS="$HOME/.oh-my-zsh/custom/plugins"
+mkdir -p "$ZSH_PLUGINS"
+
+# Install fast-syntax-highlighting
+if [[ ! -d "$ZSH_PLUGINS/fast-syntax-highlighting" ]]; then
+    echo "Installing fast-syntax-highlighting..."
+    git clone --depth=1 https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_PLUGINS/fast-syntax-highlighting"
+fi
+
+# Install zsh-autosuggestions
+if [[ ! -d "$ZSH_PLUGINS/zsh-autosuggestions" ]]; then
+    echo "Installing zsh-autosuggestions..."
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_PLUGINS/zsh-autosuggestions"
+fi
+
+# Install zsh-history-substring-search
+if [[ ! -d "$ZSH_PLUGINS/zsh-history-substring-search" ]]; then
+    echo "Installing zsh-history-substring-search..."
+    git clone --depth=1 https://github.com/zsh-users/zsh-history-substring-search.git "$ZSH_PLUGINS/zsh-history-substring-search"
+fi
+
+echo "Zsh plugins installed."
+{{ end -}}
