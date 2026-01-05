@@ -1,4 +1,15 @@
-#Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+{{- /* Determine Homebrew prefix based on OS and architecture */ -}}
+{{- $brewPrefix := "" -}}
+{{- $isMac := eq .chezmoi.os "darwin" -}}
+{{- $isLinux := eq .chezmoi.os "linux" -}}
+{{- if $isMac -}}
+{{-   if eq .chezmoi.arch "arm64" -}}
+{{-     $brewPrefix = "/opt/homebrew" -}}
+{{-   else -}}
+{{-     $brewPrefix = "/usr/local" -}}
+{{-   end -}}
+{{- end -}}
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
@@ -39,8 +50,35 @@ setopt histignorealldups
 # Don't want common history between shells
 unsetopt share_history
 
+# Aliases - macOS specific
+{{- if $isMac }}
 alias ibrew='arch -x86_64 /usr/local/bin/brew'
+{{- end }}
 alias vim='nvim'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ll='ls -alF'
+alias la='ls -A'
+
+# Git shortcuts
+alias g='git'
+alias gs='git status -sb'
+alias gd='git diff'
+alias gco='git checkout'
+alias gp='git push'
+alias gl='git pull --rebase'
+alias glog='git log --oneline --graph -20'
+
+# Docker
+alias d='docker'
+alias dc='docker compose'
+alias dps='docker ps --format "table {{`{{.Names}}`}}\t{{`{{.Status}}`}}\t{{`{{.Ports}}`}}"'
+
+# Quick edits
+alias zshrc='nvim ~/.zshrc'
+alias reload='source ~/.zshrc'
 
 # Auto-cd
 setopt auto_cd
@@ -48,9 +86,26 @@ setopt auto_cd
 # Editor setting
 export EDITOR='nvim'
 
+# NVM (Node Version Manager)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+{{- if $isMac }}
+
+# bun completions
+[ -s "{{ .chezmoi.homeDir }}/.bun/_bun" ] && source "{{ .chezmoi.homeDir }}/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+{{- end }}
+
+# fzf - fuzzy finder
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# zoxide - smart cd
+command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"

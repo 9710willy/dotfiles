@@ -14,3 +14,21 @@
 [commit]
 	gpgsign = false
 {{- end }}
+[alias]
+	st = status -sb
+	co = checkout
+	cb = checkout -b
+	cm = commit -m
+	ca = commit --amend
+	can = commit --amend --no-edit
+	unstage = reset HEAD --
+	last = log -1 HEAD --stat
+	lg = log --oneline --graph --decorate -20
+	br = branch -vv
+	df = diff
+	dfs = diff --staged
+	p = push
+	pf = push --force-with-lease
+	pl = pull --rebase
+	undo = reset --soft HEAD~1
+	stash-all = stash save --include-untracked
