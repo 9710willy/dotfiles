@@ -59,8 +59,13 @@ alias vim='nvim'
 # Navigation
 alias ..='cd ..'
 alias ...='cd ../..'
-alias ll='ls -alF'
-alias la='ls -A'
+
+# Modern CLI replacements
+alias ls='eza'
+alias ll='eza -la --git --icons'
+alias la='eza -a'
+alias lt='eza --tree --level=2'
+alias cat='bat --paging=never'
 
 # Git shortcuts
 alias g='git'
