@@ -415,9 +415,15 @@ return {
 		"akinsho/toggleterm.nvim",
 		version = "*",
 		config = function()
-			require("toggleterm").setup({ open_mapping = [[<c-\>]] })
+			require("toggleterm").setup({
+				open_mapping = [[<c-`>]],  -- Using backtick instead of backslash (Ctrl+\ sends SIGQUIT)
+				direction = "float",
+				float_opts = {
+					border = "curved",
+				},
+			})
 		end,
-		keys = [[<c-\>/]],
+		keys = { [[<c-`>]] },
 	},
 	{
 		"willothy/flatten.nvim",
