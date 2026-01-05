@@ -416,14 +416,19 @@ return {
 		version = "*",
 		config = function()
 			require("toggleterm").setup({
-				open_mapping = [[<c-`>]],  -- Using backtick instead of backslash (Ctrl+\ sends SIGQUIT)
 				direction = "float",
 				float_opts = {
 					border = "curved",
 				},
 			})
+			-- Terminal keymaps
+			vim.keymap.set('n', '<leader>tt', '<cmd>ToggleTerm<cr>', { desc = 'Toggle terminal' })
+			vim.keymap.set('n', '<leader>t1', '<cmd>1ToggleTerm<cr>', { desc = 'Terminal 1' })
+			vim.keymap.set('n', '<leader>t2', '<cmd>2ToggleTerm<cr>', { desc = 'Terminal 2' })
+			vim.keymap.set('n', '<leader>t3', '<cmd>3ToggleTerm<cr>', { desc = 'Terminal 3' })
+			vim.keymap.set('t', '<esc><esc>', [[<C-\><C-n>]], { desc = 'Exit terminal mode' })
 		end,
-		keys = { [[<c-`>]] },
+		keys = { '<leader>tt', '<leader>t1', '<leader>t2', '<leader>t3' },
 	},
 	{
 		"willothy/flatten.nvim",
