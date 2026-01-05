@@ -85,6 +85,12 @@ local sections = {
       },
     },
   },
+  { title = 'Quick Tips', show = {
+    { key = '-', disp = '󰊢 Git:    <leader>g Neogit  d=diff  cc=commit  pp=push' },
+    { key = '-', disp = '  Term:   <leader>tt toggle  t1/t2/t3 = terminals' },
+    { key = '-', disp = '  Find:   Ctrl+r fzf history    z <dir> = jump' },
+    { key = '-', disp = '  CLI:    gs ll cat btop tldr   git lg df st' },
+  }},
 }
 
 local boundaries = {}
