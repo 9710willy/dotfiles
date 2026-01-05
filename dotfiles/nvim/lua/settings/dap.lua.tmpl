@@ -1,13 +1,26 @@
-{{- $brewPrefix := "/usr/local" -}}
-{{- if eq .chezmoi.arch "arm64" -}}
-{{-   $brewPrefix = "/opt/homebrew" -}}
+{{- /* Cross-platform DAP configuration */ -}}
+{{- $isMac := eq .chezmoi.os "darwin" -}}
+{{- $isLinux := eq .chezmoi.os "linux" -}}
+{{- $pythonPath := "/usr/bin/python3" -}}
+{{- $lldbPath := "/usr/bin/lldb-vscode" -}}
+{{- if $isMac -}}
+{{-   if eq .chezmoi.arch "arm64" -}}
+{{-     $pythonPath = "/opt/homebrew/bin/python3" -}}
+{{-     $lldbPath = "/opt/homebrew/opt/llvm/bin/lldb-dap" -}}
+{{-   else -}}
+{{-     $pythonPath = "/usr/local/bin/python3" -}}
+{{-     $lldbPath = "/usr/local/opt/llvm/bin/lldb-dap" -}}
+{{-   end -}}
+{{- else if $isLinux -}}
+{{-   $pythonPath = "/usr/bin/python3" -}}
+{{-   $lldbPath = "/usr/bin/lldb-vscode" -}}
 {{- end -}}
 local dap = require("dap")
 
--- Debugpy
+-- Debugpy (Python)
 dap.adapters.python = {
 	type = "executable",
-	command = "python",
+	command = "python3",
 	args = { "-m", "debugpy.adapter" },
 }
 
@@ -18,12 +31,18 @@ dap.configurations.python = {
 		name = "Launch file",
 		program = "${file}",
 		pythonPath = function()
-			local venv_path = vim.fn.getenv("VIRTUAL_ENVIRONMENT")
+			-- Check for virtual environment first
+			local venv_path = vim.fn.getenv("VIRTUAL_ENV")
 			if venv_path ~= vim.NIL and venv_path ~= "" then
 				return venv_path .. "/bin/python"
-			else
-				return "{{ $brewPrefix }}/bin/python3"
 			end
+			-- Check for local .venv
+			local cwd = vim.fn.getcwd()
+			if vim.fn.executable(cwd .. "/.venv/bin/python") == 1 then
+				return cwd .. "/.venv/bin/python"
+			end
+			-- Fallback to system python
+			return "{{ $pythonPath }}"
 		end,
 	},
 }
@@ -53,10 +72,12 @@ dap.configurations.lua = {
 	},
 }
 
--- lldb
+-- LLDB (C/C++/Rust)
+-- Note: On macOS, install llvm via Homebrew: brew install llvm
+-- On Linux, install lldb: apt install lldb or similar
 dap.adapters.lldb = {
 	type = "executable",
-	command = "{{ $brewPrefix }}/opt/llvm/bin/lldb-vscode",
+	command = "{{ $lldbPath }}",
 	name = "lldb",
 }
 
