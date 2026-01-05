@@ -32,3 +32,16 @@
 	pl = pull --rebase
 	undo = reset --soft HEAD~1
 	stash-all = stash save --include-untracked
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = true
+	syntax-theme = Dracula
+[merge]
+	conflictstyle = diff3
+[diff]
+	colorMoved = default
