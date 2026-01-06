@@ -37,5 +37,5 @@ vim.opt.cmdheight = 0
 vim.opt.splitbelow = true
 vim.opt.splitright = true
 vim.opt.timeoutlen = 400
-vim.opt.fillchars = [[vert:│,horiz:─,eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
+vim.opt.fillchars = [[vert:│,horiz:─,eob: ,fold: ,foldsep: ]]
 vim.opt.switchbuf = "useopen,uselast"
