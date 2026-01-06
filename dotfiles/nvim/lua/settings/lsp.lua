@@ -147,7 +147,7 @@ vim.lsp.enable({
   'lua_ls',
   'texlab',
   'ltex',
-  'ts_ls',
+  'vtsls',
   'vimls',
   'yamlls',
 })
