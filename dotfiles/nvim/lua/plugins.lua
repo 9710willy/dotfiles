@@ -427,7 +427,7 @@ return {
 	},
   { 'rafamadriz/friendly-snippets' },
   { 'garymjr/nvim-snippets', opts = { friendly_snippets = true } },
-	{ "wellle/targets.vim", event = "VeryLazy" },
+  -- targets.vim removed - mini.ai + nvim-various-textobjs cover the same functionality
 	{
 		"stevearc/aerial.nvim",
 		opts = {
@@ -487,9 +487,44 @@ return {
 		event = "TermOpen",
 	},
 	{
-		"beauwilliams/focus.nvim",
+		"nvim-focus/focus.nvim",  -- maintained fork of beauwilliams/focus.nvim
+		version = "*",
 		config = function()
-			require("focus").setup({ excluded_filetypes = { "toggleterm", "TelescopePrompt" }, signcolumn = false })
+			require("focus").setup({
+				enable = true,
+				commands = true,
+				autoresize = { enable = true },
+				ui = {
+					signcolumn = false,
+					cursorline = false,
+				},
+			})
+			-- Exclude filetypes
+			local ignore_filetypes = { "toggleterm", "TelescopePrompt", "neo-tree", "Trouble" }
+			local ignore_buftypes = { "nofile", "prompt", "popup" }
+			local augroup = vim.api.nvim_create_augroup("FocusDisable", { clear = true })
+			vim.api.nvim_create_autocmd("WinEnter", {
+				group = augroup,
+				callback = function(_)
+					if vim.tbl_contains(ignore_buftypes, vim.bo.buftype) then
+						vim.w.focus_disable = true
+					else
+						vim.w.focus_disable = false
+					end
+				end,
+				desc = "Disable focus autoresize for BufType",
+			})
+			vim.api.nvim_create_autocmd("FileType", {
+				group = augroup,
+				callback = function(_)
+					if vim.tbl_contains(ignore_filetypes, vim.bo.filetype) then
+						vim.b.focus_disable = true
+					else
+						vim.b.focus_disable = false
+					end
+				end,
+				desc = "Disable focus autoresize for FileType",
+			})
 		end,
 		event = "VeryLazy",
 	},
@@ -576,7 +611,7 @@ return {
 	},
 	{
 		"mfussenegger/nvim-lint",
-		event = { "BufWritePre" },
+		event = { "BufReadPost", "BufWritePost", "InsertLeave" },
 		config = function()
 			local lint = require("lint")
 			local chktex = lint.linters.chktex
@@ -586,7 +621,7 @@ return {
 				tex = { "chktex" },
 				javascript = { "eslint_d" },
 				typescript = { "eslint_d" },
-        NeogitCommitMessage = { 'gitlint' },
+				NeogitCommitMessage = { "gitlint" },
 				c = { "flawfinder" },
 				cpp = { "flawfinder" },
 				lua = { "selene" },
@@ -596,12 +631,20 @@ return {
 				vim = { "vint" },
 			}
 
-      vim.api.nvim_create_autocmd({ 'BufWritePost' }, {
-        pattern = { '.github/**/*.yaml', '.github/**/*.yml' },
-        callback = function()
-          require('lint').try_lint 'actionlint'
-        end,
-      })
+			-- Trigger linting
+			vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
+				callback = function()
+					lint.try_lint()
+				end,
+			})
+
+			-- GitHub Actions linting
+			vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+				pattern = { ".github/**/*.yaml", ".github/**/*.yml" },
+				callback = function()
+					lint.try_lint("actionlint")
+				end,
+			})
 		end,
 	},
 	{
