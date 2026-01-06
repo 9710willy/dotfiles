@@ -99,6 +99,15 @@ return {
           starter.sections.recent_files(5, false),
           starter.sections.recent_files(5, true),
           starter.sections.sessions(5, true),
+          {
+            { name = '󰊢 Git:  <leader>g Neogit  d=diff cc=commit pp=push s/u=stage', action = '', section = 'Quick Tips' },
+            { name = '  Find: C-d=files C-g=grep C-a=buffers C-s=symbols C-p=cmds', action = '', section = 'Quick Tips' },
+            { name = '  Nav:  z=flash Z=treesitter {/}=symbols K=hover gK=select', action = '', section = 'Quick Tips' },
+            { name = '  Code: <leader>f=format g==align gJ=split/join ,d=gendoc', action = '', section = 'Quick Tips' },
+            { name = '  Diag: :Trouble  xx=toggle xd=document xw=workspace xq=qflist', action = '', section = 'Quick Tips' },
+            { name = '  Term: <leader>tt=toggle t1/t2/t3  <leader>rs=REPL', action = '', section = 'Quick Tips' },
+            { name = '  More: :Telescope undo  :Glance definitions  :OverseerRun', action = '', section = 'Quick Tips' },
+          },
         },
         content_hooks = {
           -- require('utils').icon_hook,
@@ -229,6 +238,30 @@ return {
 		"folke/trouble.nvim",
 		cmd = "Trouble",
 		opts = {},
+		keys = {
+			{ "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
+			{ "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
+			{ "<leader>xs", "<cmd>Trouble symbols toggle focus=false<cr>", desc = "Symbols (Trouble)" },
+			{ "<leader>xr", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", desc = "LSP References" },
+			{ "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
+			{ "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
+			{ "[q", function()
+				if require("trouble").is_open() then
+					require("trouble").prev({ skip_groups = true, jump = true })
+				else
+					local ok, err = pcall(vim.cmd.cprev)
+					if not ok then vim.notify(err, vim.log.levels.ERROR) end
+				end
+			end, desc = "Previous Trouble/Quickfix" },
+			{ "]q", function()
+				if require("trouble").is_open() then
+					require("trouble").next({ skip_groups = true, jump = true })
+				else
+					local ok, err = pcall(vim.cmd.cnext)
+					if not ok then vim.notify(err, vim.log.levels.ERROR) end
+				end
+			end, desc = "Next Trouble/Quickfix" },
+		},
 	},
 	"p00f/clangd_extensions.nvim",
   {
@@ -324,7 +357,16 @@ return {
 		},
 	},
 	{ "Civitasv/cmake-tools.nvim", lazy = true, opts = { cmake_always_use_terminal = true } },
-  { 'folke/neodev.nvim', opts = { lspconfig = false, library = { plugins = { 'nvim-dap-ui' }, types = true } } },
+  {
+    'folke/lazydev.nvim',
+    ft = 'lua',
+    opts = {
+      library = {
+        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+        { path = 'nvim-dap-ui' },
+      },
+    },
+  },
 
 	{
 		"lewis6991/gitsigns.nvim",

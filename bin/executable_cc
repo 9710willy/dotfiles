@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# cc - Claude Code session manager
+# Usage:
+#   cc              - Start Claude Code in current directory (or attach to existing)
+#   cc <path>       - Start Claude Code session for specific project
+#   cc -l           - List all Claude Code sessions
+#   cc -s           - Switch to a Claude session using fzf
+#   cc -k           - Kill a Claude session using fzf
+#   cc -K           - Kill all Claude sessions
+
+set -e
+
+SESSION_PREFIX="cc"
+
+get_session_name() {
+    local dir="${1:-$(pwd)}"
+    dir=$(cd "$dir" && pwd)  # Resolve to absolute path
+    local name=$(basename "$dir")
+    # Sanitize for tmux session name
+    echo "${SESSION_PREFIX}-${name}" | tr '.' '_'
+}
+
+list_sessions() {
+    tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^${SESSION_PREFIX}-" || true
+}
+
+count_sessions() {
+    list_sessions | wc -l | tr -d ' '
+}
+
+case "${1:-}" in
+    -l|--list)
+        echo "Active Claude Code sessions:"
+        sessions=$(list_sessions)
+        if [[ -z "$sessions" ]]; then
+            echo "  (none)"
+        else
+            echo "$sessions" | while read -r s; do
+                # Get the pane's current path
+                path=$(tmux display-message -t "$s" -p '#{pane_current_path}' 2>/dev/null || echo "unknown")
+                echo "  $s → $path"
+            done
+        fi
+        ;;
+    -s|--switch)
+        sessions=$(list_sessions)
+        if [[ -z "$sessions" ]]; then
+            echo "No Claude Code sessions running"
+            exit 1
+        fi
+        selected=$(echo "$sessions" | fzf --height=40% --prompt="Switch to: ")
+        if [[ -n "$selected" ]]; then
+            if [[ -n "$TMUX" ]]; then
+                tmux switch-client -t "$selected"
+            else
+                tmux attach-session -t "$selected"
+            fi
+        fi
+        ;;
+    -k|--kill)
+        sessions=$(list_sessions)
+        if [[ -z "$sessions" ]]; then
+            echo "No Claude Code sessions running"
+            exit 1
+        fi
+        selected=$(echo "$sessions" | fzf --height=40% --prompt="Kill session: ")
+        if [[ -n "$selected" ]]; then
+            tmux kill-session -t "$selected"
+            echo "Killed $selected"
+        fi
+        ;;
+    -K|--kill-all)
+        sessions=$(list_sessions)
+        if [[ -z "$sessions" ]]; then
+            echo "No Claude Code sessions running"
+            exit 0
+        fi
+        echo "$sessions" | while read -r s; do
+            tmux kill-session -t "$s"
+            echo "Killed $s"
+        done
+        ;;
+    -h|--help)
+        cat << 'EOF'
+cc - Claude Code session manager
+
+Usage:
+  cc              Start/attach Claude Code in current directory
+  cc <path>       Start Claude Code session for specific project
+  cc -l           List all Claude Code sessions
+  cc -s           Switch to a Claude session (fzf)
+  cc -k           Kill a Claude session (fzf)
+  cc -K           Kill all Claude sessions
+  cc -h           Show this help
+
+Keybindings (in tmux):
+  Ctrl-a c        New Claude session (prompted for path)
+  Ctrl-a s        Switch between sessions (includes Claude sessions)
+
+Tips:
+  - Each project gets its own persistent Claude session
+  - Sessions survive terminal closes (tmux resurrect)
+  - Use 'cc -s' to quickly jump between projects
+EOF
+        ;;
+    *)
+        # Start or attach to session
+        target_dir="${1:-$(pwd)}"
+        if [[ ! -d "$target_dir" ]]; then
+            echo "Directory not found: $target_dir"
+            exit 1
+        fi
+
+        target_dir=$(cd "$target_dir" && pwd)
+        session_name=$(get_session_name "$target_dir")
+
+        # Check if session exists
+        if tmux has-session -t "$session_name" 2>/dev/null; then
+            echo "Attaching to existing session: $session_name"
+            if [[ -n "$TMUX" ]]; then
+                tmux switch-client -t "$session_name"
+            else
+                tmux attach-session -t "$session_name"
+            fi
+        else
+            echo "Creating new Claude session: $session_name"
+            if [[ -n "$TMUX" ]]; then
+                tmux new-session -d -s "$session_name" -c "$target_dir"
+                tmux send-keys -t "$session_name" "claude" Enter
+                tmux switch-client -t "$session_name"
+            else
+                tmux new-session -s "$session_name" -c "$target_dir" "claude"
+            fi
+        fi
+        ;;
+esac
