@@ -13,12 +13,12 @@ require('nvim-treesitter.configs').setup {
   },
   indent = { enable = false },
   incremental_selection = {
-    enable = false,
+    enable = true,
     keymaps = {
-      init_selection = '<cr>',
-      node_incremental = '<tab>',
-      scope_incremental = '<cr>',
-      node_decremental = '<s-tab>',
+      init_selection = '<C-space>',
+      node_incremental = '<C-space>',
+      scope_incremental = false,
+      node_decremental = '<bs>',
     },
   },
   refactor = {
@@ -58,5 +58,20 @@ require('nvim-treesitter.configs').setup {
       return false
     end,
   },
-  -- autotag = { enable = true },
 }
+
+-- Enable autotag (windwp/nvim-ts-autotag)
+require('nvim-ts-autotag').setup({
+  opts = {
+    enable_close = true,
+    enable_rename = true,
+    enable_close_on_slash = true,
+  },
+})
+
+-- Treesitter-based folding (faster than syntax)
+vim.opt.foldmethod = 'expr'
+vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
+vim.opt.foldenable = true
