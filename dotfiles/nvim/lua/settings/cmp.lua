@@ -87,7 +87,7 @@ cmp.setup {
     ['<C-b>'] = cmp.mapping(cmp.mapping.scroll_docs(-4), { 'i', 'c' }),
     ['<C-f>'] = cmp.mapping(cmp.mapping.scroll_docs(4), { 'i', 'c' }),
     ['<C-Space>'] = cmp.mapping(cmp.mapping.complete(), { 'i', 'c' }),
-    ['<C-y>'] = cmp.config.disable,
+    ['<C-y>'] = false,  -- disable default
     ['<C-e>'] = cmp.mapping {
       i = cmp.mapping.abort(),
       c = cmp.mapping.close(),
@@ -120,11 +120,10 @@ cmp.setup {
   },
   sources = {
     { name = 'nvim_lsp_signature_help' },
-    { name = 'nvim_lsp' },
+    { name = 'nvim_lsp' },  -- lazydev provides nvim lua completions via LSP
     { name = 'snippets' },
-    { name = 'nvim_lua' },
     { name = 'path' },
-    -- { name = 'buffer' },
+    { name = 'buffer', keyword_length = 4 },
   },
 }
 
