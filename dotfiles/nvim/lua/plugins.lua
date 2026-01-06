@@ -405,8 +405,13 @@ return {
 			require("hover").setup{
 				init = function()
 					require("hover.providers.lsp")
-          require 'hover.providers.dap'
+					require("hover.providers.dap")
 				end,
+				preview_opts = {
+					border = "rounded",
+				},
+				preview_window = false,
+				title = true,
 			}
 
 			vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
