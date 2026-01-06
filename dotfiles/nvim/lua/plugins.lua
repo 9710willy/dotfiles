@@ -100,13 +100,13 @@ return {
           starter.sections.recent_files(5, true),
           starter.sections.sessions(5, true),
           {
-            { name = '󰊢 Git:  <leader>g=Neogit  hs=stage hr=reset hp=preview gb=blame', action = '', section = 'Quick Tips' },
-            { name = '  Find: C-d=files C-g=grep C-a=buffers C-s=symbols C-p=cmds', action = '', section = 'Quick Tips' },
+            { name = '󰊢 Git:  <leader>g=Neogit  hs=stage hr=reset hp=preview gy=link', action = '', section = 'Quick Tips' },
+            { name = '  Find: C-d=files C-g=grep C-a=buffers C-s=symbols <leader>S=replace', action = '', section = 'Quick Tips' },
             { name = '  Nav:  z=flash Z=treesitter {/}=symbols K=hover C-space=select', action = '', section = 'Quick Tips' },
-            { name = '  Code: <leader>f=format g==align gJ=split/join ,d=gendoc', action = '', section = 'Quick Tips' },
-            { name = '  Diag: :Trouble  xx=toggle xd=document xr=references xq=qflist', action = '', section = 'Quick Tips' },
-            { name = '  Fold: zc=close zo=open zM=all closed zR=all open za=toggle', action = '', section = 'Quick Tips' },
-            { name = '  More: :Telescope undo  :Glance definitions  :OverseerRun', action = '', section = 'Quick Tips' },
+            { name = '  Code: <leader>f=format re=extract rv=var ri=inline rp=dbgprint', action = '', section = 'Quick Tips' },
+            { name = '  Yank: p/P=put C-p/C-n=cycle history  ]p/[p=put indented', action = '', section = 'Quick Tips' },
+            { name = '  Fold: zc=close zo=open zM/zR=all zK=peek za=toggle', action = '', section = 'Quick Tips' },
+            { name = '  Diag: :Trouble xx=toggle xd=document xr=refs xq=qflist', action = '', section = 'Quick Tips' },
           },
         },
         content_hooks = {
@@ -820,6 +820,85 @@ return {
 					require("rulebook").lookupRule()
 				end,
 			},
+		},
+	},
+	-- Yank ring - cycle through yank history
+	{
+		"gbprod/yanky.nvim",
+		dependencies = { "kkharji/sqlite.lua" },
+		opts = {
+			ring = { storage = "sqlite" },
+			highlight = { timer = 150 },
+		},
+		keys = {
+			{ "p", "<Plug>(YankyPutAfter)", mode = { "n", "x" }, desc = "Put after" },
+			{ "P", "<Plug>(YankyPutBefore)", mode = { "n", "x" }, desc = "Put before" },
+			{ "gp", "<Plug>(YankyGPutAfter)", mode = { "n", "x" }, desc = "GPut after" },
+			{ "gP", "<Plug>(YankyGPutBefore)", mode = { "n", "x" }, desc = "GPut before" },
+			{ "<C-p>", "<Plug>(YankyPreviousEntry)", desc = "Previous yank" },
+			{ "<C-n>", "<Plug>(YankyNextEntry)", desc = "Next yank" },
+			{ "]p", "<Plug>(YankyPutIndentAfterLinewise)", desc = "Put indented after" },
+			{ "[p", "<Plug>(YankyPutIndentBeforeLinewise)", desc = "Put indented before" },
+		},
+	},
+	-- Project-wide search and replace
+	{
+		"nvim-pack/nvim-spectre",
+		dependencies = { "nvim-lua/plenary.nvim" },
+		cmd = "Spectre",
+		keys = {
+			{ "<leader>S", function() require("spectre").toggle() end, desc = "Toggle Spectre" },
+			{ "<leader>sw", function() require("spectre").open_visual({ select_word = true }) end, desc = "Search current word" },
+			{ "<leader>sw", function() require("spectre").open_visual() end, mode = "v", desc = "Search selection" },
+			{ "<leader>sp", function() require("spectre").open_file_search({ select_word = true }) end, desc = "Search in file" },
+		},
+		opts = {
+			live_update = true,
+			is_insert_mode = true,
+		},
+	},
+	-- Generate Git permalinks (GitLab/GitHub)
+	{
+		"linrongbin16/gitlinker.nvim",
+		cmd = "GitLink",
+		keys = {
+			{ "<leader>gy", "<cmd>GitLink<cr>", mode = { "n", "v" }, desc = "Copy git link" },
+			{ "<leader>gY", "<cmd>GitLink!<cr>", mode = { "n", "v" }, desc = "Open git link" },
+			{ "<leader>gB", "<cmd>GitLink blame<cr>", mode = { "n", "v" }, desc = "Copy blame link" },
+		},
+		opts = {},
+	},
+	-- Refactoring support
+	{
+		"ThePrimeagen/refactoring.nvim",
+		dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
+		keys = {
+			{ "<leader>re", function() require("refactoring").refactor("Extract Function") end, mode = "x", desc = "Extract function" },
+			{ "<leader>rf", function() require("refactoring").refactor("Extract Function To File") end, mode = "x", desc = "Extract to file" },
+			{ "<leader>rv", function() require("refactoring").refactor("Extract Variable") end, mode = "x", desc = "Extract variable" },
+			{ "<leader>rI", function() require("refactoring").refactor("Inline Function") end, desc = "Inline function" },
+			{ "<leader>ri", function() require("refactoring").refactor("Inline Variable") end, mode = { "n", "x" }, desc = "Inline variable" },
+			{ "<leader>rb", function() require("refactoring").refactor("Extract Block") end, desc = "Extract block" },
+			{ "<leader>rB", function() require("refactoring").refactor("Extract Block To File") end, desc = "Extract block to file" },
+			{ "<leader>rp", function() require("refactoring").debug.printf({ below = true }) end, desc = "Debug print" },
+			{ "<leader>rc", function() require("refactoring").debug.cleanup({}) end, desc = "Debug cleanup" },
+		},
+		opts = {},
+	},
+	-- Better fold preview
+	{
+		"kevinhwang91/nvim-ufo",
+		dependencies = { "kevinhwang91/promise-async" },
+		event = "BufReadPost",
+		keys = {
+			{ "zR", function() require("ufo").openAllFolds() end, desc = "Open all folds" },
+			{ "zM", function() require("ufo").closeAllFolds() end, desc = "Close all folds" },
+			{ "zK", function() require("ufo").peekFoldedLinesUnderCursor() end, desc = "Peek fold" },
+		},
+		opts = {
+			provider_selector = function()
+				return { "treesitter", "indent" }
+			end,
 		},
 	},
 }
