@@ -139,6 +139,7 @@ vim.lsp.enable({
   'html',
   'jsonls',
   'julials',
+  'marksman',
   'ocamllsp',
   'pyright',
   'ruff',
@@ -148,4 +149,5 @@ vim.lsp.enable({
   'ltex',
   'ts_ls',
   'vimls',
+  'yamlls',
 })

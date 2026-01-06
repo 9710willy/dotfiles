@@ -367,6 +367,7 @@ return {
       },
     },
   },
+  { 'b0o/schemastore.nvim', lazy = true },
 
 	{
 		"lewis6991/gitsigns.nvim",
