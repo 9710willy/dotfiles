@@ -65,7 +65,6 @@ return {
 			},
 		},
 	},
-	{ "Olical/vim-enmasse", cmd = "EnMasse" },
 	{
 		"kevinhwang91/nvim-bqf",
 		ft = "qf",
