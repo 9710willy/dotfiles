@@ -1,0 +1,33 @@
+{{- /* Chezmoi config template - prompts user on first init */ -}}
+{{- $context := "" -}}
+{{- $gitName := "" -}}
+{{- $gitEmail := "" -}}
+{{- $gitSigningKey := "" -}}
+
+{{- /* Prompt for machine context on init */ -}}
+{{- $hostname := .chezmoi.hostname -}}
+{{- $context = promptStringOnce . "machine.context" "Machine context (company/personal)" -}}
+
+{{- if eq $context "company" -}}
+{{-   $gitName = promptStringOnce . "git.name" "Git name for work" -}}
+{{-   $gitEmail = promptStringOnce . "git.email" "Git email for work" -}}
+{{-   $gitSigningKey = promptStringOnce . "git.signingKey" "GPG signing key ID (or 'none')" -}}
+{{- else -}}
+{{-   $gitName = "9710willy" -}}
+{{-   $gitEmail = "9710willy@users.noreply.github.com" -}}
+{{-   $gitSigningKey = "none" -}}
+{{- end -}}
+
+[data]
+[data.machine]
+    context = {{ $context | quote }}
+    hostname = {{ $hostname | quote }}
+
+[data.git]
+    name = {{ $gitName | quote }}
+    email = {{ $gitEmail | quote }}
+    signingKey = {{ $gitSigningKey | quote }}
+
+[git]
+    autoCommit = true
+    autoPush = false
