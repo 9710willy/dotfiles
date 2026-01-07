@@ -1,19 +1,17 @@
-{{- if .isWorkMachine }}
 [user]
-	name = {{ .workGitName }}
-	email = {{ .workGitEmail }}
-	signingkey = {{ .workGitSigningKey }}
+	name = {{ .git.name }}
+	email = {{ .git.email }}
+{{- if and .git.signingKey (ne .git.signingKey "none") }}
+	signingkey = {{ .git.signingKey }}
 [commit]
 	gpgsign = true
 [gpg]
 	program = gpg
 {{- else }}
-[user]
-	name = 9710willy
-	email = 9710willy@users.noreply.github.com
 [commit]
 	gpgsign = false
 {{- end }}
+
 [alias]
 	st = status -sb
 	co = checkout
@@ -32,16 +30,21 @@
 	pl = pull --rebase
 	undo = reset --soft HEAD~1
 	stash-all = stash save --include-untracked
+
 [core]
 	pager = delta
+
 [interactive]
 	diffFilter = delta --color-only
+
 [delta]
 	navigate = true
 	line-numbers = true
 	side-by-side = true
 	syntax-theme = gruvbox-dark
+
 [merge]
 	conflictstyle = diff3
+
 [diff]
 	colorMoved = default

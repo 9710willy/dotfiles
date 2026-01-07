@@ -1,0 +1,82 @@
+# Brewfile - managed by chezmoi
+# Machine context: {{ .machine.context }}
+
+# =============================================================================
+# Taps
+# =============================================================================
+tap "fsouza/prettierd"
+
+# =============================================================================
+# Core Tools (all machines)
+# =============================================================================
+brew "chezmoi"
+brew "neovim"
+brew "tmux"
+
+# Shell enhancements
+brew "bat"
+brew "eza"
+brew "fzf"
+brew "mise"
+brew "zoxide"
+brew "git-delta"
+
+# Search & navigation
+brew "ripgrep"
+brew "fd"
+brew "tree"
+
+# Useful CLI tools
+brew "gh"        # GitHub CLI
+brew "jq"        # JSON processor
+
+# =============================================================================
+# Development Tools (all machines)
+# =============================================================================
+
+# Language servers & formatters
+brew "ltex-ls"
+brew "lua-language-server"
+brew "marksman"
+brew "prettierd"
+brew "selene"
+brew "vscode-langservers-extracted"
+brew "yaml-language-server"
+
+# Docker
+brew "colima"
+brew "docker"
+
+# =============================================================================
+# GUI Apps (all machines)
+# =============================================================================
+cask "ghostty"
+cask "karabiner-elements"
+cask "raycast"
+cask "rectangle"
+
+{{- if eq .machine.context "company" }}
+
+# =============================================================================
+# Company machine tools
+# =============================================================================
+
+# Uncomment as needed:
+# cask "slack"
+# cask "zoom"
+
+{{- end }}
+
+{{- if eq .machine.context "personal" }}
+
+# =============================================================================
+# Personal machine tools
+# =============================================================================
+
+# Uncomment as needed:
+# cask "figma"
+# cask "notion"
+# brew "postgresql@16"
+# brew "redis"
+
+{{- end }}

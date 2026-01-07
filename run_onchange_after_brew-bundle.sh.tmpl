@@ -1,9 +1,10 @@
 {{- if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
-# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+# Brewfile hash: {{ include "Brewfile.tmpl" | sha256sum }}
+# Machine context: {{ .machine.context }}
 # This comment ensures the script re-runs when Brewfile changes
 
-echo "Installing Homebrew packages..."
-brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
+echo "Installing Homebrew packages for {{ .machine.context }} machine..."
+brew bundle --file="{{ .chezmoi.homeDir }}/Brewfile"
 {{ end -}}
