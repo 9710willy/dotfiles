@@ -83,6 +83,40 @@ On first run, chezmoi will automatically:
 3. Clone zsh plugins (powerlevel10k, fast-syntax-highlighting, etc.)
 4. Setup fzf key bindings
 
+## Helper Scripts
+
+```bash
+dotfiles-health    # Validate your setup (check for missing tools)
+dotfiles-update    # Update everything (chezmoi, brew, mise, plugins)
+dotfiles-cleanup   # Clean up caches (npm, pip, docker, etc.)
+dotfiles-cleanup --dry-run  # See what would be cleaned
+```
+
+## Shell Features
+
+### Key Bindings
+- `Ctrl+R` - fzf history search
+- `Ctrl+T` - fzf file finder
+- `Ctrl+G` - fzf git branch switcher with preview
+- `Alt+C` - fzf directory jump
+
+### Helper Functions
+```bash
+mkcd <dir>         # Create directory and cd into it
+replace <s> <r> <glob>  # Find and replace in files
+git-cleanup        # Delete local branches that are gone from remote
+port <num>         # Find what's using a port
+serve [port]       # Quick HTTP server (default: 8000)
+extract <file>     # Extract any archive format
+```
+
+### Modern CLI Aliases
+```bash
+ls  → eza          # Better ls
+ll  → eza -la      # Long list with git status
+cat → bat          # Syntax highlighted cat
+```
+
 ## Files
 
 | Source | Target |
@@ -91,6 +125,8 @@ On first run, chezmoi will automatically:
 | `dot_gitconfig.tmpl` | `~/.gitconfig` |
 | `dot_tmux.conf` | `~/.tmux.conf` |
 | `Brewfile.tmpl` | `~/Brewfile` |
+| `bin/executable_*` | `~/bin/*` |
+| `private_dot_ssh/` | `~/.ssh/` |
 | `dotfiles/nvim/` | `~/dotfiles/nvim/` → `~/.config/nvim/` |
 
 ## Architecture
