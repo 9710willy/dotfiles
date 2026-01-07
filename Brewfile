@@ -28,8 +28,13 @@ brew "selene"
 brew "vscode-langservers-extracted"
 brew "yaml-language-server"
 
-# Docker (lightweight)
+# Docker (lightweight colima + CLI)
 brew "colima"
+brew "docker"
+
+# Useful CLI tools
+brew "gh"        # GitHub CLI
+brew "jq"        # JSON processor
 
 # Casks
 cask "ghostty"

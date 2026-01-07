@@ -1,0 +1,11 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Setup fzf key bindings and fuzzy completion
+FZF_INSTALL="$(brew --prefix)/opt/fzf/install"
+
+if [[ -x "$FZF_INSTALL" ]] && [[ ! -f "$HOME/.fzf.zsh" ]]; then
+    echo "Setting up fzf key bindings..."
+    "$FZF_INSTALL" --key-bindings --completion --no-update-rc --no-bash --no-fish
+fi
+{{ end -}}
