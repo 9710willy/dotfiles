@@ -25,14 +25,42 @@ chezmoi apply  # Apply changes
 
 ## Work Machine Setup
 
-For work machines, add to `~/.config/chezmoi/chezmoi.toml`:
+For work machines, create `~/.config/chezmoi/chezmoi.toml`:
 
 ```toml
+# Chezmoi configuration
+
+[git]
+    autoCommit = true
+
 [data]
+    # Set to true on work machines
     isWorkMachine = true
+
+    # Work git config (required for work machines)
+    workGitName = "Your Name"
+    workGitEmail = "your.email@company.com"
+    workGitSigningKey = "YOUR_GPG_KEY_ID"  # From: gpg --list-secret-keys
 ```
 
-This configures git with work email and GPG signing. Personal machines use GitHub noreply email.
+This configures:
+- Git identity with work email
+- GPG commit signing
+- Auto-commit for chezmoi changes
+
+**Personal machines**: Just set `isWorkMachine = false` (or omit the file entirely).
+
+## Version Managers
+
+This setup uses **mise** (not nvm/pyenv) for Node.js, Python, etc.
+
+```bash
+# Global defaults (in ~/.config/mise/config.toml)
+mise use --global node@20 python@3.12
+
+# Per-project (creates mise.toml in project dir)
+mise use node@18
+```
 
 ## Bootstrap Scripts
 
