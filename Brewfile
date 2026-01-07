@@ -10,6 +10,7 @@ brew "tmux"
 brew "bat"
 brew "eza"
 brew "fzf"
+brew "mise"
 brew "zoxide"
 brew "git-delta"
 
