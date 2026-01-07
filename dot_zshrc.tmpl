@@ -67,6 +67,24 @@ bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 
 # =============================================================================
+# Completion System (cached for performance)
+# =============================================================================
+autoload -Uz compinit
+# Only regenerate completion dump once a day
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C  # Skip security check for speed
+fi
+
+# Completion styling
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.zsh/cache
+
+# =============================================================================
 # Shell Options
 # =============================================================================
 setopt correct
@@ -152,11 +170,92 @@ alias ccwork='cc ~/work'
 alias ccdot='cc ~/dotfiles'
 
 # =============================================================================
+# Helper Functions
+# =============================================================================
+
+# Quick directory creation and cd
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# Find and replace in files (uses ripgrep + sed)
+replace() {
+  if [[ $# -ne 3 ]]; then
+    echo "Usage: replace <search> <replace> <glob>"
+    echo "Example: replace 'oldFunc' 'newFunc' '**/*.ts'"
+    return 1
+  fi
+  rg -l "$1" -g "$3" | xargs sed -i '' "s/$1/$2/g"
+}
+
+# Git branch cleanup - delete merged branches
+git-cleanup() {
+  git fetch -p
+  git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -r git branch -D
+}
+
+# Port finder - what's using a port?
+port() {
+  lsof -i ":$1" | grep LISTEN
+}
+
+# Quick HTTP server
+serve() {
+  local port="${1:-8000}"
+  echo "Serving on http://localhost:$port"
+  python3 -m http.server "$port"
+}
+
+# Extract any archive
+extract() {
+  if [[ -f "$1" ]]; then
+    case "$1" in
+      *.tar.bz2) tar xjf "$1" ;;
+      *.tar.gz)  tar xzf "$1" ;;
+      *.tar.xz)  tar xJf "$1" ;;
+      *.bz2)     bunzip2 "$1" ;;
+      *.gz)      gunzip "$1" ;;
+      *.tar)     tar xf "$1" ;;
+      *.tbz2)    tar xjf "$1" ;;
+      *.tgz)     tar xzf "$1" ;;
+      *.zip)     unzip "$1" ;;
+      *.Z)       uncompress "$1" ;;
+      *.7z)      7z x "$1" ;;
+      *)         echo "'$1' cannot be extracted" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# =============================================================================
 # Tool Integrations (load after PATH is set)
 # =============================================================================
 
-# fzf - fuzzy finder
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# fzf - fuzzy finder with enhanced defaults
+if [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+  export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview-window=right:50%"
+  # Use fd for faster file finding (respects .gitignore)
+  command -v fd &>/dev/null && export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+fi
+
+# fzf + git integration
+fzf-git-branch() {
+  git branch --all --sort=-committerdate |
+    grep -v HEAD |
+    fzf --preview 'git log --oneline --graph -20 {}' |
+    sed 's/^[* ]*//' |
+    sed 's#remotes/origin/##'
+}
+
+# Ctrl+G to switch git branches with preview
+fzf-git-checkout() {
+  local branch=$(fzf-git-branch)
+  [[ -n "$branch" ]] && git checkout "$branch"
+}
+zle -N fzf-git-checkout
+bindkey '^G' fzf-git-checkout
 
 # zoxide - smart cd
 command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"
