@@ -2,10 +2,13 @@
 {{- if eq .chezmoi.arch "arm64" -}}
 {{-   $brewPrefix = "/opt/homebrew" -}}
 {{- end -}}
+# .zshenv - runs for ALL shells (interactive, non-interactive, login, non-login)
+# Keep this minimal! Only truly universal env vars belong here.
+
+# Reactivate virtualenv if we're in one (for subshells)
 if [[ -n $VIRTUAL_ENV && -e "${VIRTUAL_ENV}/bin/activate" ]]; then
   source "${VIRTUAL_ENV}/bin/activate"
 fi
 
-# PATH tweaks
-export PATH="{{ $brewPrefix }}/bin:/usr/local/bin:{{ .chezmoi.homeDir }}/Library/Python/3.9/bin:{{ .chezmoi.homeDir }}/.cargo/bin:$HOME/langservers/lua-language-server/bin:$PATH"
-
+# Rust/Cargo (if installed)
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"

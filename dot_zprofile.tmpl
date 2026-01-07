@@ -2,10 +2,8 @@
 {{- if eq .chezmoi.arch "arm64" -}}
 {{-   $brewPrefix = "/opt/homebrew" -}}
 {{- end -}}
-# Add .NET Core SDK tools
-export PATH="$PATH:{{ .chezmoi.homeDir }}/.dotnet/tools"
+# .zprofile - runs for login shells (before .zshrc)
+# Keep this minimal - most config should be in .zshrc
 
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
+# Initialize Homebrew for login shells (GUI apps, scripts, etc.)
 eval $({{ $brewPrefix }}/bin/brew shellenv)

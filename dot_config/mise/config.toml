@@ -1,0 +1,10 @@
+[settings]
+# Read .nvmrc, .node-version, .python-version files
+legacy_version_file = true
+# Automatically install missing tools
+auto_install = true
+
+[tools]
+# Default versions (can be overridden per-project with mise.toml)
+node = "20"
+python = "3.12"
