@@ -10,18 +10,33 @@
 {{ if eq .machine.context "company" -}}
 # Five9 Codebase Patterns
 
-## Package Management
-- Use **yarn 1.x** (not pnpm/npm) for Five9 projects
-- Monorepos use Lerna for orchestration
+## Modern Stack (Preferred for New Projects)
+
+### Core
+- **Vite** or **Bun** for bundling
+- **React Query** for server state
+- **Zustand** for client state (when needed)
+- **Tailwind CSS** + **CSS Modules** for styling
+- **@fivn/nimbus** component library - use heavily, avoid custom components when Nimbus has one
+- **Vitest** for testing
+
+### Package Management
+- **yarn 1.x** for Five9 projects
 - GitLab npm registry for @fivn packages
 
-## Architecture (Admin Console MFEs)
+---
+
+## Legacy Stack (Existing Admin Console MFEs)
+
+When working in legacy codebases, follow existing patterns:
+
 - **Redux Toolkit** with `createSlice` for state
-- **Redux Saga** for all async operations and side effects
-- **Styled Components** for styling (not CSS modules)
+- **Redux Saga** for async operations
+- **Styled Components** for styling
+- **Jest + react-testing-library** for tests
 - **react-i18next** for translations - use `t(translations.Key.subkey())`
 
-## File Structure
+### Legacy File Structure
 ```
 src/
   api/           # API clients (one per domain)
@@ -34,17 +49,13 @@ src/
   locales/       # i18n translation files
 ```
 
+---
+
 ## Import Order (ESLint enforced)
 1. React and external packages
 2. @fivn packages (@fivn/ui-components, @fivn/nimbus, @fivn/admin-ui-base)
 3. Internal absolute imports (redux/, types/, utils/)
 4. Relative imports
-
-## Testing
-- **Vitest** for ui-components
-- **Jest + react-testing-library** for MFEs
-- **NightwatchJS** for journey/e2e tests
-- Tests co-located in `__tests__/` directories
 
 ## Code Style
 - Prettier + ESLint (@fivn/eslint-config-react)
@@ -75,8 +86,9 @@ src/
 - Neovim as editor
 - Ghostty terminal
 {{ if eq .machine.context "company" -}}
-- Redux Toolkit + Redux Saga
-- Jest / Vitest for testing
+- React Query + Zustand (modern) or Redux Saga (legacy)
+- Vitest (modern) or Jest (legacy)
+- @fivn/nimbus component library
 - yarn 1.x
 {{ else -}}
 - Zustand or React Query for state
