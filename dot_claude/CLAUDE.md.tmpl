@@ -1,0 +1,85 @@
+# Personal Preferences
+
+- Use TypeScript strict mode
+- Prefer functional React components with hooks
+- Don't add unnecessary comments - only when logic is non-obvious
+- Prefer explicit error handling over silent failures
+- Keep code simple - avoid over-engineering
+- Follow Conventional Commits for commit messages
+
+{{ if eq .machine.context "company" -}}
+# Five9 Codebase Patterns
+
+## Package Management
+- Use **yarn 1.x** (not pnpm/npm) for Five9 projects
+- Monorepos use Lerna for orchestration
+- GitLab npm registry for @fivn packages
+
+## Architecture (Admin Console MFEs)
+- **Redux Toolkit** with `createSlice` for state
+- **Redux Saga** for all async operations and side effects
+- **Styled Components** for styling (not CSS modules)
+- **react-i18next** for translations - use `t(translations.Key.subkey())`
+
+## File Structure
+```
+src/
+  api/           # API clients (one per domain)
+  app/           # Components and features
+  redux/
+    slices/      # Redux Toolkit slices
+    sagas/       # Redux Saga generators
+    selectors/   # Reselect selectors
+  types/         # TypeScript types
+  locales/       # i18n translation files
+```
+
+## Import Order (ESLint enforced)
+1. React and external packages
+2. @fivn packages (@fivn/ui-components, @fivn/nimbus, @fivn/admin-ui-base)
+3. Internal absolute imports (redux/, types/, utils/)
+4. Relative imports
+
+## Testing
+- **Vitest** for ui-components
+- **Jest + react-testing-library** for MFEs
+- **NightwatchJS** for journey/e2e tests
+- Tests co-located in `__tests__/` directories
+
+## Code Style
+- Prettier + ESLint (@fivn/eslint-config-react)
+- Cognitive complexity limit: 15 (SonarJS)
+- Run `yarn lint-auto-fix` before committing
+{{ else -}}
+# Personal Projects Stack
+
+## Package Management
+- Use **pnpm** for package management
+- Prefer Vite for bundling
+
+## Testing
+- **Vitest** for unit tests
+- **Playwright** for e2e tests
+
+## Code Style
+- Prettier + ESLint
+- Run `pnpm lint` before committing
+{{ end }}
+# Mistakes to Avoid
+
+<!-- Add entries when Claude makes mistakes that should not repeat -->
+
+# My Stack
+
+- React 18, TypeScript
+- Neovim as editor
+- Ghostty terminal
+{{ if eq .machine.context "company" -}}
+- Redux Toolkit + Redux Saga
+- Jest / Vitest for testing
+- yarn 1.x
+{{ else -}}
+- Zustand or React Query for state
+- Vitest for testing
+- pnpm
+{{ end -}}
