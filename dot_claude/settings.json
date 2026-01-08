@@ -21,6 +21,12 @@
         "matcher": "Write|Edit",
         "command": "[ -f .prettierrc ] || [ -f .prettierrc.json ] || [ -f .prettierrc.js ] && npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "command": "echo '\\n✅ Task complete. Consider running /verify to check your changes.'"
+      }
     ]
   },
   "feedbackSurveyState": {
