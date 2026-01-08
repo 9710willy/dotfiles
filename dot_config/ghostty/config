@@ -21,6 +21,9 @@ cursor-style-blink = false
 # Shell integration
 shell-integration = zsh
 
+# Notifications (for Claude Code input prompts)
+desktop-notifications = true
+
 # Mouse
 mouse-hide-while-typing = true
 copy-on-select = clipboard
