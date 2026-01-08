@@ -17,7 +17,7 @@
 - **React Query** for server state
 - **Zustand** for client state (when needed)
 - **Tailwind CSS** + **CSS Modules** for styling
-- **@fivn/nimbus** component library - use heavily, avoid custom components when Nimbus has one
+- **@fivn/nimbus** component library - use heavily, avoid custom when Nimbus has it
 - **Vitest** for testing
 
 ### Package Management
@@ -26,9 +26,9 @@
 
 ---
 
-## Legacy Stack (Existing Admin Console MFEs)
+## Admin Console MFEs (Legacy React)
 
-When working in legacy codebases, follow existing patterns:
+When working in admin-console MFEs, follow existing patterns:
 
 - **Redux Toolkit** with `createSlice` for state
 - **Redux Saga** for async operations
@@ -36,17 +36,85 @@ When working in legacy codebases, follow existing patterns:
 - **Jest + react-testing-library** for tests
 - **react-i18next** for translations - use `t(translations.Key.subkey())`
 
-### Legacy File Structure
+### File Structure
 ```
 src/
-  api/           # API clients (one per domain)
-  app/           # Components and features
+  api/           # API clients
+  app/           # Components
   redux/
     slices/      # Redux Toolkit slices
     sagas/       # Redux Saga generators
     selectors/   # Reselect selectors
   types/         # TypeScript types
-  locales/       # i18n translation files
+  locales/       # i18n files
+```
+
+---
+
+## Core Legacy Stack (web-app / ADP / ADT+)
+
+The **oldest and most critical** codebase. Be very careful with changes.
+
+### Stack
+- **Backbone.js** + **Marionette** for MVC
+- **RequireJS** for module loading (AMD)
+- **Grunt** for build (NOT webpack/vite)
+- **jQuery** for DOM manipulation
+- **Handlebars** for templates
+- **Node 18** (.nvmrc)
+
+### Key Apps
+| App | Path | Description |
+|-----|------|-------------|
+| ADP (vcc-web) | `apps/vcc-web/` | Agent Desktop Plus |
+| ADT+ (vcc-integrations) | `apps/vcc-integrations/` | Agent Desktop Toolkit |
+| Supervisor | `apps/supervisor/` | Supervisor Console |
+
+### Architecture (ADP)
+```
+Server → Data Adapter → Server Model Storage → ModelAggregator → PresentationModel → View
+```
+
+Key files:
+- `five9.freedom.api.js` - XHR wrapper
+- `five9.server.models.storage.js` - Cache + WebSocket
+- `five9.presentation.model.js` - Computed attributes
+
+### Commands
+```bash
+grunt clean          # Clean build
+grunt test           # Run tests
+grunt build:dev      # Dev build (fast)
+# AVOID: grunt release, npm run build (too slow)
+```
+
+### Common Issues
+- **Module not loading:** Check RequireJS `define()` dependencies
+- **Events not firing:** Verify Backbone `events` hash selectors
+- **Memory leaks:** Use `listenTo()` not `on()` for Backbone events
+- **Render issues:** Check Handlebars template bindings
+
+### Feature Flags
+Feature flags are complex with dependencies. Key pattern:
+```javascript
+// ADP
+if (FeatureFlagsApi.FLAG_NAME_VALUE) { }
+
+// ADT+
+if (FeatureFlagsApi.FLAG_NAME.value()) { }
+```
+
+Check `_updateDependentFlags()` when modifying flags.
+
+### Commit Format (web-app)
+```
+issue-{JIRA}: [{APP}] {description}
+```
+Examples:
+```
+issue-UX-1234: [ADP] Fix email threading
+issue-UX-1234: [ADT+] Add pagination
+issue-UX-1234: [ADP, ADT+] Update shared flag
 ```
 
 ---
@@ -60,7 +128,7 @@ src/
 ## Code Style
 - Prettier + ESLint (@fivn/eslint-config-react)
 - Cognitive complexity limit: 15 (SonarJS)
-- Run `yarn lint-auto-fix` before committing
+- Run `yarn lint-auto-fix` or `npm run lint` before committing
 {{ else -}}
 # Personal Projects Stack
 
@@ -86,10 +154,10 @@ src/
 - Neovim as editor
 - Ghostty terminal
 {{ if eq .machine.context "company" -}}
-- React Query + Zustand (modern) or Redux Saga (legacy)
+- React Query + Zustand (modern) or Redux Saga (legacy) or Backbone (core)
 - Vitest (modern) or Jest (legacy)
 - @fivn/nimbus component library
-- yarn 1.x
+- yarn 1.x / npm
 {{ else -}}
 - Zustand or React Query for state
 - Vitest for testing
