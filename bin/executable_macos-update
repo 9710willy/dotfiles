@@ -1,0 +1,54 @@
+#!/bin/bash
+# macos-update - Update macOS with Little Snitch reminder
+# Usage: macos-update
+
+set -euo pipefail
+
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo "=== macOS Software Update ==="
+echo ""
+echo -e "${YELLOW}Before proceeding, enable these in Little Snitch:${NC}"
+echo ""
+echo "  Allow these processes:"
+echo "    - softwareupdated"
+echo "    - com.apple.MobileSoftwareUpdate.UpdateBrainService"
+echo "    - nsurlsessiond"
+echo ""
+echo "  To these domains:"
+echo "    - swscan.apple.com"
+echo "    - swcdn.apple.com"
+echo "    - swdist.apple.com"
+echo "    - swdownload.apple.com"
+echo "    - updates.cdn-apple.com"
+echo "    - updates-http.cdn-apple.com"
+echo "    - mesu.apple.com"
+echo "    - gdmf.apple.com"
+echo "    - xp.apple.com"
+echo ""
+echo -e "${CYAN}Tip: Create a 'macOS Updates' rule group in Little Snitch${NC}"
+echo -e "${CYAN}     that you can quickly enable/disable.${NC}"
+echo ""
+read -p "Press Enter when Little Snitch is configured (or Ctrl+C to abort)..."
+
+echo ""
+echo -e "${GREEN}Checking for updates...${NC}"
+softwareupdate -l
+
+echo ""
+read -p "Install all updates? (y/N) " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Installing updates (may require password and restart)..."
+    sudo softwareupdate -ia --verbose
+    echo ""
+    echo -e "${GREEN}Done!${NC}"
+    echo -e "${YELLOW}Remember to disable the Little Snitch update rules.${NC}"
+else
+    echo "Skipped. Run 'sudo softwareupdate -ia' manually to install."
+    echo -e "${YELLOW}Remember to disable the Little Snitch update rules.${NC}"
+fi
