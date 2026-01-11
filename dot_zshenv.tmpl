@@ -12,3 +12,6 @@ fi
 
 # Rust/Cargo (if installed)
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+
+# Claude Code privacy - disable all non-essential traffic (telemetry, error reporting)
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
