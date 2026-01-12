@@ -2,11 +2,10 @@
 description: Simplify the code I just wrote
 ---
 
-Review the code changes I just made and simplify them:
-- Remove unnecessary abstractions
-- Inline single-use variables
-- Simplify conditionals
-- Remove dead code
-- Keep the same functionality
+Use the Task tool to invoke the `code-simplifier:code-simplifier` agent to simplify my recent code changes.
 
-Be aggressive about simplification. Less code is better.
+The agent should focus on recently modified code (unstaged git changes) unless I specify particular files.
+
+Pass this context to the agent:
+- Target: $ARGUMENTS (if provided) or recent unstaged changes
+- Be aggressive about simplification while preserving functionality
