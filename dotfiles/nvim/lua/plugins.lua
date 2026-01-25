@@ -400,7 +400,7 @@ return {
 	},
 	{
 		"lewis6991/hover.nvim",
-		event = "BufReadPost",
+		event = "LspAttach",
 		config = function()
 			require("hover").setup{
 				init = function()
@@ -640,7 +640,9 @@ return {
 			-- Trigger linting
 			vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
 				callback = function()
-					lint.try_lint()
+					if lint.linters_by_ft[vim.bo.filetype] then
+						lint.try_lint()
+					end
 				end,
 			})
 
