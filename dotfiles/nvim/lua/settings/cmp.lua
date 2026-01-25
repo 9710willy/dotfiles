@@ -38,13 +38,17 @@ cmp.setup {
   preselect = cmp.PreselectMode.Item,
   sorting = {
     comparators = {
-      -- The built-in comparators:
       cmp.config.compare.offset,
       cmp.config.compare.exact,
       cmp.config.compare.recently_used,
       require('cmp-under-comparator').under,
-      require 'clangd_extensions.cmp_scores',
       cmp.config.compare.score,
+      function(entry1, entry2)
+        local ft = vim.bo.filetype
+        if ft == 'c' or ft == 'cpp' then
+          return require('clangd_extensions.cmp_scores')(entry1, entry2)
+        end
+      end,
       cmp.config.compare.kind,
       cmp.config.compare.sort_text,
       cmp.config.compare.length,

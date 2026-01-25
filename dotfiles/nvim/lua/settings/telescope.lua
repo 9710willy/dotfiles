@@ -28,10 +28,12 @@ telescope.setup {
   },
 }
 
--- Extensions
-telescope.load_extension 'aerial'
+-- Essential extensions (load immediately)
 telescope.load_extension 'fzf'
-telescope.load_extension 'noice'
 telescope.load_extension 'ui-select'
-telescope.load_extension 'cmake_tools'
-telescope.load_extension 'undo'
+
+-- Deferred extensions (loaded on first use via keymaps)
+-- telescope.load_extension 'aerial'
+-- telescope.load_extension 'noice'
+-- telescope.load_extension 'cmake_tools'
+-- telescope.load_extension 'undo'
