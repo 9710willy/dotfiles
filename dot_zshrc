@@ -78,8 +78,8 @@ setopt auto_cd
 
 # History
 HISTFILE=~/.zhistory
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=50000
+SAVEHIST=50000
 setopt appendhistory
 setopt histignorealldups
 setopt hist_ignore_space      # Don't save commands starting with space
