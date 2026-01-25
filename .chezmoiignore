@@ -1,0 +1,12 @@
+# Machine-specific, don't sync
+.claude/projects/
+.zsh_history
+.zhistory
+
+# Generated files
+**/.DS_Store
+**/node_modules/
+
+# Neovim generated
+dotfiles/nvim/session/
+dotfiles/nvim/lazy-lock.json
