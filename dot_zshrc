@@ -279,5 +279,8 @@ bindkey '^G' fzf-git-checkout
 # zoxide - smart cd
 command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"
 
+# direnv - auto-load project environment variables
+command -v direnv &> /dev/null && eval "$(direnv hook zsh)"
+
 # p10k config (must be at the end)
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
