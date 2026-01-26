@@ -202,49 +202,6 @@ extract() {
   fi
 }
 
-# Switch web-app worktree for nginx (with fzf support)
-webapp() {
-  local workdir="$HOME/work"
-  local symlink="$workdir/web-app-active"
-  local current=$(readlink "$symlink" 2>/dev/null)
-
-  if [[ $# -eq 0 ]]; then
-    # No argument - use fzf to select or list available
-    local worktrees=$(find "$workdir" -maxdepth 1 -type d -name "web-app*" ! -name "web-app-active" | sort)
-
-    if command -v fzf &>/dev/null; then
-      local selected=$(echo "$worktrees" | fzf --prompt="Select web-app worktree: " \
-        --preview "echo 'Current: ${current:-none}'" \
-        --preview-window=up:1)
-      [[ -z "$selected" ]] && return 0
-      ln -sfn "$selected" "$symlink"
-    else
-      echo "Available worktrees:"
-      echo "$worktrees" | while read -r wt; do
-        local marker=""
-        [[ "$wt" == "$current" ]] && marker=" (active)"
-        echo "  $(basename "$wt")$marker"
-      done
-      echo "\nUsage: webapp <worktree-name>"
-      return 0
-    fi
-  else
-    # Argument provided - switch directly
-    local target="$workdir/$1"
-    [[ ! -d "$target" ]] && target="$workdir/web-app-$1"
-
-    if [[ ! -d "$target" ]]; then
-      echo "Error: Worktree '$1' not found"
-      echo "Available: $(find "$workdir" -maxdepth 1 -type d -name "web-app*" ! -name "web-app-active" -exec basename {} \; | tr '\n' ' ')"
-      return 1
-    fi
-    ln -sfn "$target" "$symlink"
-  fi
-
-  nginx -s reload 2>/dev/null
-  echo "✓ Switched to: $(readlink "$symlink" | xargs basename)"
-}
-
 # =============================================================================
 # Tool Integrations (load after PATH is set)
 # =============================================================================
@@ -281,6 +238,9 @@ command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"
 
 # direnv - auto-load project environment variables
 command -v direnv &> /dev/null && eval "$(direnv hook zsh)"
+
+# Machine-local config (not tracked by chezmoi)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # p10k config (must be at the end)
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

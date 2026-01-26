@@ -2,6 +2,7 @@
 .claude/projects/
 .zsh_history
 .zhistory
+.zshrc.local
 
 # Generated files
 **/.DS_Store
