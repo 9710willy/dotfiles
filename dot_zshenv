@@ -1,7 +1,3 @@
-{{- $brewPrefix := "/usr/local" -}}
-{{- if eq .chezmoi.arch "arm64" -}}
-{{-   $brewPrefix = "/opt/homebrew" -}}
-{{- end -}}
 # .zshenv - runs for ALL shells (interactive, non-interactive, login, non-login)
 # Keep this minimal! Only truly universal env vars belong here.
 
@@ -13,5 +9,8 @@ fi
 # Rust/Cargo (if installed)
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
 
-# Claude Code privacy - disable all non-essential traffic (telemetry, error reporting)
+# Privacy - disable telemetry for dev tools
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+export TURBO_TELEMETRY_DISABLED=1
+export NEXT_TELEMETRY_DISABLED=1
+export DO_NOT_TRACK=1
