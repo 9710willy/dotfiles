@@ -1,2 +1,5 @@
 # Neovim session files
 dotfiles/nvim/session/
+
+# Claude Code project-local cruft inside the chezmoi source dir
+/.claude/
