@@ -32,8 +32,8 @@ echo ""
 echo "Homebrew:"
 if command -v brew &>/dev/null; then
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo "[DRY RUN] Would run: brew cleanup --prune=all"
-        brew cleanup --dry-run 2>/dev/null | head -5
+        echo "[DRY RUN] Would run: brew cleanup --prune=all -s"
+        brew cleanup --prune=all -s --dry-run 2>/dev/null | head -5
     else
         brew cleanup --prune=all -s
         echo "Cleaned Homebrew caches"

@@ -94,8 +94,9 @@ Usage:
   cc -h           Show this help
 
 Keybindings (in tmux):
-  Ctrl-a c        New Claude session (prompted for path)
-  Ctrl-a s        Switch between sessions (includes Claude sessions)
+  Ctrl-a N        New Claude session (prompts for path)
+  Ctrl-a C        Switch Claude sessions (fzf)
+  Ctrl-a L        List Claude sessions
 
 Tips:
   - Each project gets its own persistent Claude session

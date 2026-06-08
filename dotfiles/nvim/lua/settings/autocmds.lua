@@ -16,7 +16,7 @@ autocmd('BufWinEnter', { group = misc_aucmds, command = 'checktime' })
 autocmd('TextYankPost', {
   group = misc_aucmds,
   callback = function()
-    vim.highlight.on_yank()
+    vim.hl.on_yank()
   end,
 })
 autocmd('FileType', { group = misc_aucmds, pattern = 'qf', command = 'set nobuflisted' })
