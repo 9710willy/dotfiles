@@ -4,6 +4,12 @@
 .zhistory
 .zshrc.local
 
+# Workstation-only: Five9 work config + secrets — never sync to repo
+.zshenv
+.claude/settings.json
+.claude/CLAUDE.md
+.ssh/config
+
 # Generated files
 **/.DS_Store
 **/node_modules/
