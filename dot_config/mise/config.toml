@@ -6,5 +6,6 @@ auto_install = true
 
 [tools]
 # Default versions (can be overridden per-project with mise.toml)
-node = "20"
+node = "22"
+"npm:typescript-language-server" = "latest"
 python = "3.12"
