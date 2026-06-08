@@ -90,6 +90,7 @@ dotfiles-health    # Validate your setup (check for missing tools)
 dotfiles-update    # Update everything (chezmoi, brew, mise, plugins)
 dotfiles-cleanup   # Clean up caches (npm, pip, docker, etc.)
 dotfiles-cleanup --dry-run  # See what would be cleaned
+macos-update       # Run macOS software updates (with Little Snitch reminder)
 ```
 
 ## Shell Features
@@ -121,7 +122,7 @@ cat → bat          # Syntax highlighted cat
 
 | Source | Target |
 |--------|--------|
-| `dot_zshrc.tmpl` | `~/.zshrc` |
+| `dot_zshrc` | `~/.zshrc` |
 | `dot_gitconfig.tmpl` | `~/.gitconfig` |
 | `dot_tmux.conf` | `~/.tmux.conf` |
 | `Brewfile.tmpl` | `~/Brewfile` |
@@ -138,5 +139,5 @@ cat → bat          # Syntax highlighted cat
     ├── .chezmoi.toml.tmpl      # Config template (prompts on init)
     ├── Brewfile.tmpl           # Context-aware packages
     ├── dot_gitconfig.tmpl      # Context-aware git identity
-    └── dot_zshrc.tmpl          # Shell config
+    └── dot_zshrc               # Shell config
 ```

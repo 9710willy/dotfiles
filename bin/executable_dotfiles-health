@@ -19,10 +19,10 @@ check() {
 
     if eval "$cmd" &>/dev/null; then
         echo -e "${GREEN}✓${NC} $name"
-        ((passed++))
+        passed=$((passed+1))
     else
         echo -e "${RED}✗${NC} $name"
-        ((failed++))
+        failed=$((failed+1))
     fi
 }
 
@@ -32,10 +32,10 @@ warn() {
 
     if eval "$cmd" &>/dev/null; then
         echo -e "${GREEN}✓${NC} $name"
-        ((passed++))
+        passed=$((passed+1))
     else
         echo -e "${YELLOW}⚠${NC} $name (optional)"
-        ((warned++))
+        warned=$((warned+1))
     fi
 }
 
@@ -59,7 +59,7 @@ echo "Version Managers:"
 check "mise installed" "command -v mise"
 check "mise node available" "mise current node"
 check "mise python available" "mise current python"
-check "corepack enabled" "command -v yarn"
+check "yarn available" "command -v yarn"
 
 echo ""
 echo "CLI Enhancements:"
