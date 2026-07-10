@@ -21,11 +21,12 @@ req() { # req METHOD URL [curl-args...]
 cmd="${1:-help}"; shift || true
 case "$cmd" in
   get) # confl get PAGEID — title/meta + body as readable text
-    req GET "$V2/pages/$1?body-format=storage" \
+    req GET "$V2/pages/$1?body-format=export_view" \
       | jq -r '"id: \(.id)  v\(.version.number)  space: \(.spaceId)  parent: \(.parentId // "-")",
-               "title: \(.title)", "---", .body.storage.value' \
-      | sed -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g' -e 's/&amp;/\&/g' -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' \
-      | awk 'NF' ;;
+               "title: \(.title)", "---", .body.export_view.value' \
+      | sed -e 's/<br[^>]*>/\n/g; s/<\/p>/\n/g; s/<\/li>/\n/g; s/<\/h[1-6]>/\n/g; s/<\/tr>/\n/g; s/<\/div>/\n/g' \
+            -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g' \
+      | awk '{$1=$1};NF' ;;
   body) # confl body PAGEID — raw storage-format HTML (for edits)
     req GET "$V2/pages/$1?body-format=storage" | jq -r '.body.storage.value' ;;
   search) # confl search 'CQL' [limit]

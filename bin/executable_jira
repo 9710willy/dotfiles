@@ -6,17 +6,20 @@ set -euo pipefail
 JIRA_BASE="${JIRA_BASE:-https://example.atlassian.net/rest/api/3}"
 AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
 
-# ADF -> plain text (paragraph-level; good enough for reading)
-ADF2TEXT='def adf2text:
-  if . == null then "" else
-    [.content[]? | [.. | objects | select(.type? == "text") | .text] | join("")] | join("\n")
-  end;'
-
-req() { # req METHOD PATH [curl-args...]
+req() { # req METHOD PATH [curl-args...] — errors to stderr, one Retry-After-aware 429 retry
   local method="$1" path="$2"; shift 2
-  local out code
-  out=$(curl -sS -w '\n%{http_code}' -X "$method" -H "$AUTH" "$JIRA_BASE$path" "$@")
-  code="${out##*$'\n'}"; out="${out%$'\n'*}"
+  local out code hdrs retried=0
+  while :; do
+    hdrs=$(mktemp)
+    out=$(curl -sS -D "$hdrs" -w '\n%{http_code}' -X "$method" -H "$AUTH" "$JIRA_BASE$path" "$@")
+    code="${out##*$'\n'}"; out="${out%$'\n'*}"
+    if [[ "$code" == 429 && "$retried" == 0 ]]; then
+      retried=1
+      sleep "$(awk 'tolower($1)=="retry-after:"{print int($2); f=1} END{if(!f)print 5}' "$hdrs")"
+      rm -f "$hdrs"; continue
+    fi
+    rm -f "$hdrs"; break
+  done
   if [[ "$code" -ge 300 ]]; then
     echo "HTTP $code" >&2
     echo "$out" | jq -r '.errorMessages[]?, (.errors // {} | to_entries[] | "\(.key): \(.value)")' >&2 2>/dev/null || echo "$out" >&2
@@ -25,7 +28,13 @@ req() { # req METHOD PATH [curl-args...]
   printf '%s' "$out"
 }
 
-adf() { # stdin/arg plain text -> ADF doc JSON (blank line = new paragraph)
+striphtml() {
+  sed -e 's/<br[^>]*>/\n/g; s/<\/p>/\n/g; s/<\/li>/\n/g; s/<\/h[1-6]>/\n/g; s/<\/tr>/\n/g; s/<\/div>/\n/g' \
+      -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g; s/&#39;/'"'"'/g' \
+    | awk '{$1=$1};NF'
+}
+
+adf() { # plain text -> ADF doc JSON (blank line = new paragraph)
   jq -Rs '{type:"doc",version:1,content:[splits("\n\n+")|select(length>0)|{type:"paragraph",content:[{type:"text",text:.}]}]}' <<<"$1"
 }
 
@@ -33,15 +42,14 @@ cmd="${1:-help}"; shift || true
 case "$cmd" in
   get) # jira get KEY [extra,fields]
     key="$1"; extra="${2:+,$2}"
-    req GET "/issue/$key?fields=summary,status,assignee,priority,issuetype,parent,labels,description${extra:-}" \
-      | jq -r "$ADF2TEXT"'
-        "\(.key)  [\(.fields.issuetype.name)] \(.fields.status.name)  \(.fields.priority.name // "-")  @\(.fields.assignee.displayName // "unassigned")",
-        "parent: \(.fields.parent.key // "-")  labels: \(.fields.labels | join(","))",
-        "summary: \(.fields.summary)",
-        (.fields | del(.summary,.status,.assignee,.priority,.issuetype,.parent,.labels,.description) | to_entries[] | select(.value != null) | "\(.key): \(.value | tostring | .[0:200])"),
-        "--- description ---",
-        (.fields.description | adf2text)' ;;
-  search) # jira search 'JQL' [maxResults] [extra,fields]
+    out=$(req GET "/issue/$key?fields=summary,status,assignee,priority,issuetype,parent,labels,description${extra:-}&expand=renderedFields")
+    jq -r '"\(.key)  [\(.fields.issuetype.name)] \(.fields.status.name)  \(.fields.priority.name // "-")  @\(.fields.assignee.displayName // "unassigned")",
+           "parent: \(.fields.parent.key // "-")  labels: \(.fields.labels | join(","))",
+           "summary: \(.fields.summary)",
+           (.fields | del(.summary,.status,.assignee,.priority,.issuetype,.parent,.labels,.description) | to_entries[] | select(.value != null) | "\(.key): \(.value | tostring | .[0:200])"),
+           "--- description ---"' <<<"$out"
+    jq -r '.renderedFields.description // ""' <<<"$out" | striphtml ;;
+  search) # jira search 'JQL' [maxResults] [extra,fields] — JQL must be bounded
     jql="$1"; max="${2:-50}"; extra="${3:+,$3}"
     req GET "/search/jql" -G --data-urlencode "jql=$jql" \
       --data-urlencode "fields=summary,status,assignee${extra:-}" --data-urlencode "maxResults=$max" \
@@ -51,8 +59,8 @@ case "$cmd" in
     req POST "/search/approximate-count" -H 'Content-Type: application/json' \
       -d "$(jq -n --arg jql "$1" '{jql:$jql}')" | jq -r '.count' ;;
   comments) # jira comments KEY [limit]
-    req GET "/issue/$1/comment?orderBy=-created&maxResults=${2:-20}" \
-      | jq -r "$ADF2TEXT"'.comments[] | "[\(.created[0:16]) \(.author.displayName)]\n\(.body | adf2text)\n"' ;;
+    req GET "/issue/$1/comment?orderBy=-created&maxResults=${2:-20}&expand=renderedBody" \
+      | jq -r '.comments[] | "[\(.created[0:16]) \(.author.displayName)]\n\(.renderedBody)\n<hr>"' | striphtml ;;
   comment) # jira comment KEY 'text'
     req POST "/issue/$1/comment" -H 'Content-Type: application/json' \
       -d "$(jq -n --argjson body "$(adf "$2")" '{body:$body}')" | jq -r '"comment \(.id) added"' ;;
@@ -68,6 +76,9 @@ case "$cmd" in
   transition) # jira transition KEY ID
     req POST "/issue/$1/transitions" -H 'Content-Type: application/json' \
       -d "{\"transition\":{\"id\":\"$2\"}}" >/dev/null && echo "transitioned $1" ;;
+  user) # jira user QUERY — find accountId for JQL/payloads
+    req GET "/user/search" -G --data-urlencode "query=$1" \
+      | jq -r '.[] | "\(.accountId)\t\(.displayName)\t\(.emailAddress // "-")"' ;;
   raw) # jira raw METHOD /path [curl-args...] — escape hatch, full JSON out
     m="$1"; p="$2"; shift 2; req "$m" "$p" "$@" | jq . ;;
   *)
