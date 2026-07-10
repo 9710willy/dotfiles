@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# confl — minimal-output Confluence Cloud wrapper (token-efficient for LLM use)
+# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (set in ~/.zshenv)
+set -euo pipefail
+
+V2="${CONFLUENCE_BASE:-https://example.atlassian.net/wiki/api/v2}"
+V1="${CONFLUENCE_V1_BASE:-https://example.atlassian.net/wiki/rest/api}"
+AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
+
+req() { # req METHOD URL [curl-args...]
+  local method="$1" url="$2"; shift 2
+  local out code
+  out=$(curl -sS -w '\n%{http_code}' -X "$method" -H "$AUTH" "$url" "$@")
+  code="${out##*$'\n'}"; out="${out%$'\n'*}"
+  if [[ "$code" -ge 300 ]]; then
+    echo "HTTP $code" >&2; echo "$out" >&2; exit 1
+  fi
+  printf '%s' "$out"
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  get) # confl get PAGEID — title/meta + body as readable text
+    req GET "$V2/pages/$1?body-format=storage" \
+      | jq -r '"id: \(.id)  v\(.version.number)  space: \(.spaceId)  parent: \(.parentId // "-")",
+               "title: \(.title)", "---", .body.storage.value' \
+      | sed -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g' -e 's/&amp;/\&/g' -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' \
+      | awk 'NF' ;;
+  body) # confl body PAGEID — raw storage-format HTML (for edits)
+    req GET "$V2/pages/$1?body-format=storage" | jq -r '.body.storage.value' ;;
+  search) # confl search 'CQL' [limit]
+    req GET "$V1/search" -G --data-urlencode "cql=$1" --data-urlencode "limit=${2:-25}" \
+      | jq -r '(.results[] | "\(.content.id // .id)\t\(.content.type // .entityType)\t\(.title // .content.title)"),
+               (if ._links.next then "next: \(._links.next)" else empty end)' ;;
+  create) # confl create SPACEID 'title' [PARENTID] < body.html  (storage HTML on stdin)
+    body=$(cat)
+    req POST "$V2/pages" -H 'Content-Type: application/json' \
+      -d "$(jq -n --arg s "$1" --arg t "$2" --arg p "${3:-}" --arg b "$body" \
+        '{spaceId:$s,title:$t,body:{representation:"storage",value:$b}} + (if $p != "" then {parentId:$p} else {} end)')" \
+      | jq -r '"created \(.id): \(._links.base // "")\(._links.webui // "")"' ;;
+  update) # confl update PAGEID 'title' < body.html  (auto version bump)
+    body=$(cat)
+    v=$(req GET "$V2/pages/$1" | jq -r '.version.number')
+    req PUT "$V2/pages/$1" -H 'Content-Type: application/json' \
+      -d "$(jq -n --arg id "$1" --arg t "$2" --arg b "$body" --argjson v "$((v + 1))" \
+        '{id:$id,status:"current",title:$t,body:{representation:"storage",value:$b},version:{number:$v}}')" >/dev/null \
+      && echo "updated $1 -> v$((v + 1))" ;;
+  children) # confl children PAGEID
+    req GET "$V2/pages/$1/children?limit=100" | jq -r '.results[] | "\(.id)\t\(.title)"' ;;
+  raw) # confl raw METHOD URL-PATH(v2-relative or full URL) [curl-args...]
+    m="$1"; p="$2"; shift 2
+    [[ "$p" == http* ]] || p="$V2$p"
+    req "$m" "$p" "$@" | jq . ;;
+  *)
+    grep -E '^  [a-z|]+\)' "$0" | sed 's/) # /  /;s/^ *//' ;;
+esac

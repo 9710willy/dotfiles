@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# jira — minimal-output Jira Cloud v3 wrapper (token-efficient for LLM use)
+# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (set in ~/.zshenv)
+set -euo pipefail
+
+JIRA_BASE="${JIRA_BASE:-https://example.atlassian.net/rest/api/3}"
+AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
+
+# ADF -> plain text (paragraph-level; good enough for reading)
+ADF2TEXT='def adf2text:
+  if . == null then "" else
+    [.content[]? | [.. | objects | select(.type? == "text") | .text] | join("")] | join("\n")
+  end;'
+
+req() { # req METHOD PATH [curl-args...]
+  local method="$1" path="$2"; shift 2
+  local out code
+  out=$(curl -sS -w '\n%{http_code}' -X "$method" -H "$AUTH" "$JIRA_BASE$path" "$@")
+  code="${out##*$'\n'}"; out="${out%$'\n'*}"
+  if [[ "$code" -ge 300 ]]; then
+    echo "HTTP $code" >&2
+    echo "$out" | jq -r '.errorMessages[]?, (.errors // {} | to_entries[] | "\(.key): \(.value)")' >&2 2>/dev/null || echo "$out" >&2
+    exit 1
+  fi
+  printf '%s' "$out"
+}
+
+adf() { # stdin/arg plain text -> ADF doc JSON (blank line = new paragraph)
+  jq -Rs '{type:"doc",version:1,content:[splits("\n\n+")|select(length>0)|{type:"paragraph",content:[{type:"text",text:.}]}]}' <<<"$1"
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  get) # jira get KEY [extra,fields]
+    key="$1"; extra="${2:+,$2}"
+    req GET "/issue/$key?fields=summary,status,assignee,priority,issuetype,parent,labels,description${extra:-}" \
+      | jq -r "$ADF2TEXT"'
+        "\(.key)  [\(.fields.issuetype.name)] \(.fields.status.name)  \(.fields.priority.name // "-")  @\(.fields.assignee.displayName // "unassigned")",
+        "parent: \(.fields.parent.key // "-")  labels: \(.fields.labels | join(","))",
+        "summary: \(.fields.summary)",
+        (.fields | del(.summary,.status,.assignee,.priority,.issuetype,.parent,.labels,.description) | to_entries[] | select(.value != null) | "\(.key): \(.value | tostring | .[0:200])"),
+        "--- description ---",
+        (.fields.description | adf2text)' ;;
+  search) # jira search 'JQL' [maxResults] [extra,fields]
+    jql="$1"; max="${2:-50}"; extra="${3:+,$3}"
+    req GET "/search/jql" -G --data-urlencode "jql=$jql" \
+      --data-urlencode "fields=summary,status,assignee${extra:-}" --data-urlencode "maxResults=$max" \
+      | jq -r '(.issues[] | "\(.key)\t\(.fields.status.name)\t\(.fields.assignee.displayName // "-")\t\(.fields.summary)"),
+               (if .nextPageToken then "nextPageToken: \(.nextPageToken)" else empty end)' ;;
+  count) # jira count 'JQL'
+    req POST "/search/approximate-count" -H 'Content-Type: application/json' \
+      -d "$(jq -n --arg jql "$1" '{jql:$jql}')" | jq -r '.count' ;;
+  comments) # jira comments KEY [limit]
+    req GET "/issue/$1/comment?orderBy=-created&maxResults=${2:-20}" \
+      | jq -r "$ADF2TEXT"'.comments[] | "[\(.created[0:16]) \(.author.displayName)]\n\(.body | adf2text)\n"' ;;
+  comment) # jira comment KEY 'text'
+    req POST "/issue/$1/comment" -H 'Content-Type: application/json' \
+      -d "$(jq -n --argjson body "$(adf "$2")" '{body:$body}')" | jq -r '"comment \(.id) added"' ;;
+  create) # jira create PROJ Type 'summary' ['description']
+    req POST "/issue" -H 'Content-Type: application/json' \
+      -d "$(jq -n --arg p "$1" --arg t "$2" --arg s "$3" --argjson d "$(adf "${4:-}")" \
+        '{fields:{project:{key:$p},issuetype:{name:$t},summary:$s,description:$d}}')" | jq -r '.key' ;;
+  update) # jira update KEY '{"summary":"..."}'  (raw fields JSON)
+    req PUT "/issue/$1" -H 'Content-Type: application/json' \
+      -d "$(jq -n --argjson f "$2" '{fields:$f}')" >/dev/null && echo "updated $1" ;;
+  transitions) # jira transitions KEY
+    req GET "/issue/$1/transitions" | jq -r '.transitions[] | "\(.id)\t\(.name)\t-> \(.to.name)"' ;;
+  transition) # jira transition KEY ID
+    req POST "/issue/$1/transitions" -H 'Content-Type: application/json' \
+      -d "{\"transition\":{\"id\":\"$2\"}}" >/dev/null && echo "transitioned $1" ;;
+  raw) # jira raw METHOD /path [curl-args...] — escape hatch, full JSON out
+    m="$1"; p="$2"; shift 2; req "$m" "$p" "$@" | jq . ;;
+  *)
+    grep -E '^  [a-z|]+\)' "$0" | sed 's/) # /  /;s/^ *//' ;;
+esac
