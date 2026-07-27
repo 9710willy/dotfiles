@@ -44,7 +44,7 @@ Do not soften the lens prompts when editing this skill. "Review like a great eng
 
 Use `TodoWrite` to track:
 
-- [ ] **Resolve scope**: get the target diff (`git diff <range>`), changed-file list, commit messages. Cap at ~3000 lines; if larger, split by directory/module and review each separately.
+- [ ] **Resolve scope**: get `git diff --stat <range>`, the changed-file list, and commit messages. You do NOT need the full diff — each agent fetches its own (see Dispatch pattern). Read enough of it to select lenses. If the diff exceeds ~3000 lines, split by directory/module and run this skill once per slice.
 - [ ] **Inventory tech** (if any backend/service surface): runtime version, frameworks (Spring, Quarkus, Micronaut, Node, plain), datastore, sync vs async style. Include in every agent's context.
 - [ ] **Inspect & select lenses**: from the diff, decide which lenses have real surface area (see Lens selection).
 - [ ] **Dispatch all selected agents in PARALLEL** in a single message (see `superpowers:dispatching-parallel-agents`). Each gets the dispatch prompt below with its own lens file path.
@@ -71,7 +71,7 @@ Lens files live in `~/.claude/skills/dev-review/references/lenses/`. Pass the ab
 | Compiler / build / perf | `build-perf.md` | rendering, data fetching, dependencies, bundle/build config, lists |
 | Type system | `types.md` | any TypeScript (`.ts`/`.tsx`) |
 | Accessibility | `a11y.md` | interactive UI, forms, semantic markup |
-| Design-engineering *(secondary)* | `design-eng.md` | new or changed visible UI — layout, CSS, components |
+| Design-engineering | `design-eng.md` | new or changed visible UI — layout, CSS, components |
 | Frontend security | `fe-security.md` | `dangerouslySetInnerHTML`/`innerHTML`, auth/tokens, `postMessage`, URLs, new deps |
 
 **Backend** — dispatch when the diff has surface for them:
@@ -96,14 +96,20 @@ lens — adopt it completely, including what it tells you not to flag. Do not
 review from generic best practices; review from that lens only.
 
 CONTEXT:
-- Target: <branch / PR / range>
-- Slice you are reviewing: <whole diff | frontend files only | backend files only>
+- Repo root: <absolute path>
+- Range: <e.g. master...HEAD, or the PR's base...head>
+- Slice you are reviewing: <whole diff | the frontend files below | the backend files below>
 - Tech inventory: <runtime version, frameworks, datastore, sync/async style>
-- Files changed: <list>
-- Diff (truncated if large): <diff>
+- Files in your slice: <list>
 - Commit messages: <messages>
 
-You may use Read/Grep/Bash to inspect the codebase for context.
+GET THE DIFF YOURSELF — first tool call after reading your lens:
+`git -C <repo root> diff <range> -- <the files in your slice>`
+Then Read whole files, Grep for callers, and check the dependency's source
+(node_modules, the package's types) whenever a finding depends on a contract
+you cannot see in the diff. A finding you verified beats a finding you
+suspected: if you can confirm or kill a suspicion by reading the code, do it
+before writing it up, and say in the finding what you verified.
 
 OUTPUT DISCIPLINE — every finding MUST satisfy all three or be dropped:
 1. QUOTE the offending code (the actual lines). No quote = not a finding.
@@ -126,7 +132,9 @@ Return findings as JSON ONLY (no prose):
     {"severity": "blocker|major|minor|nit", "file": "path", "line": 123,
      "lens": "<lens name>", "code": "<quoted offending lines>",
      "principle": "<named principle/source>", "finding": "<consequence>",
-     "suggestion": "<concrete fix>"}
+     "suggestion": "<concrete fix>",
+     "verified": "<what you actually checked, and where — file:line or package
+                   path — or the word UNVERIFIED plus what you could not see>"}
   ],
   "summary": "<2 sentences: your overall read>"
 }
@@ -141,10 +149,14 @@ Word budget: under 900 words.
 After all agents return:
 
 1. Parse JSON from each (tolerate minor formatting drift).
-2. Group by severity: Blocker → Major → Minor → Nit.
-3. Within severity, sort by file then line.
-4. If two lenses raise findings on the same line, merge them and tag both lenses.
-5. Drop any finding missing a quoted `code` or a named `principle` — it failed output discipline.
+2. Drop any finding missing a quoted `code` or a named `principle` — it failed output discipline.
+3. **Resolve evidence conflicts before merging.** Two lenses often land on the same line, one having actually checked the contract and one having only inferred it. Verified beats unverified — always, regardless of severity or lens:
+   - One lens verified a fact (`verified` names a file/package it read) that another only speculated about → the verified one wins. If it *kills* the other finding, the other finding is **refuted**: drop it from the report and note it in one line under Resolved, naming both lenses. Never report both sides of a settled fact.
+   - Both lenses verified, and they still disagree (different valid trade-offs, e.g. `overflow: auto` vs `hidden`) → this is **disputed**, not resolvable by argument. List it once under Disputed with each lens's position and what observation would settle it. Do not average them, pick a winner, or silently drop the minority view.
+   - No lens verified, and the finding hinges on an unseen contract → keep it, but mark it as unverified in the report so the human knows what to check first.
+4. Merge duplicates: if two lenses raise the same finding on the same line, merge into one entry, tag both lenses, and keep the HIGHEST severity assigned by any of them.
+5. Group by severity: Blocker → Major → Minor → Nit. Within severity, sort by file then line.
+6. Zero nits across many lenses is a good sign, not a gap. Do not pad.
 
 ## Output format
 
@@ -167,13 +179,24 @@ After all agents return:
 ## Nits — optional
 ...
 
+## Disputed — lenses disagree, needs an observation
+- `file:line` — **[Lens A]** <position> · **[Lens B]** <position>
+  - Settled by: <the specific check that would decide it>
+
+## Resolved — refuted by another lens
+- **[Lens A]** claimed <finding>; **[Lens B]** verified <fact> at <where>. Dropped.
+
 ## Reviewer summaries
 - **<Lens>**: <summary>
 
 ## Coverage
 - Lenses run: N of M · Files: N · Diff: N lines
-- Findings: N blocker, N major, N minor, N nit
+- Findings: N blocker, N major, N minor, N nit · N disputed, N refuted
 ```
+
+Omit the Disputed and Resolved sections when empty. Mark any surviving finding
+whose `verified` field says UNVERIFIED with "(unverified: <what to check>)" so
+the human knows which claims still rest on inference.
 
 ## Notes
 
