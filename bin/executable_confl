@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 # confl — minimal-output Confluence Cloud wrapper (token-efficient for LLM use)
-# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (set in ~/.zshenv)
+# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (export from your shell profile)
 set -euo pipefail
+
+command -v jq >/dev/null || { echo "confl: requires jq (brew install jq)" >&2; exit 1; }
+: "${ATLASSIAN_EMAIL:?not set — export your Atlassian login email in your shell profile}"
+: "${ATLASSIAN_TOKEN:?not set — create a token at https://id.atlassian.com/manage-profile/security/api-tokens and export it in your shell profile}"
 
 V2="${CONFLUENCE_BASE:-https://example.atlassian.net/wiki/api/v2}"
 V1="${CONFLUENCE_V1_BASE:-https://example.atlassian.net/wiki/rest/api}"
 AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
 
-req() { # req METHOD URL [curl-args...]
+req() { # req METHOD URL [curl-args...] — one Retry-After-aware 429 retry
   local method="$1" url="$2"; shift 2
-  local out code
-  out=$(curl -sS -w '\n%{http_code}' -X "$method" -H "$AUTH" "$url" "$@")
-  code="${out##*$'\n'}"; out="${out%$'\n'*}"
+  local out code hdrs retried=0
+  while :; do
+    hdrs=$(mktemp)
+    out=$(curl -sS -D "$hdrs" -w '\n%{http_code}' -X "$method" -H "$AUTH" "$url" "$@")
+    code="${out##*$'\n'}"; out="${out%$'\n'*}"
+    if [[ "$code" == 429 && "$retried" == 0 ]]; then
+      retried=1
+      sleep "$(awk 'tolower($1)=="retry-after:"{print int($2); f=1} END{if(!f)print 5}' "$hdrs")"
+      rm -f "$hdrs"; continue
+    fi
+    rm -f "$hdrs"; break
+  done
   if [[ "$code" -ge 300 ]]; then
     echo "HTTP $code" >&2; echo "$out" >&2; exit 1
   fi
@@ -47,7 +60,7 @@ case "$cmd" in
         '{id:$id,status:"current",title:$t,body:{representation:"storage",value:$b},version:{number:$v}}')" >/dev/null \
       && echo "updated $1 -> v$((v + 1))" ;;
   children) # confl children PAGEID
-    req GET "$V2/pages/$1/children?limit=100" | jq -r '.results[] | "\(.id)\t\(.title)"' ;;
+    req GET "$V2/pages/$1/direct-children?limit=100" | jq -r '.results[] | "\(.id)\t\(.title)"' ;;
   raw) # confl raw METHOD URL-PATH(v2-relative or full URL) [curl-args...]
     m="$1"; p="$2"; shift 2
     [[ "$p" == http* ]] || p="$V2$p"

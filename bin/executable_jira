@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # jira — minimal-output Jira Cloud v3 wrapper (token-efficient for LLM use)
-# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (set in ~/.zshenv)
+# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (export from your shell profile)
 set -euo pipefail
+
+command -v jq >/dev/null || { echo "jira: requires jq (brew install jq)" >&2; exit 1; }
+: "${ATLASSIAN_EMAIL:?not set — export your Atlassian login email in your shell profile}"
+: "${ATLASSIAN_TOKEN:?not set — create a token at https://id.atlassian.com/manage-profile/security/api-tokens and export it in your shell profile}"
 
 JIRA_BASE="${JIRA_BASE:-https://example.atlassian.net/rest/api/3}"
 AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
