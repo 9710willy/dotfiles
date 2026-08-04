@@ -47,7 +47,7 @@ Use `TodoWrite` to track:
 - [ ] **Resolve scope**: get `git diff --stat <range>`, the changed-file list, and commit messages. You do NOT need the full diff — each agent fetches its own (see Dispatch pattern). Read enough of it to select lenses. If the diff exceeds ~3000 lines, split by directory/module and run this skill once per slice.
 - [ ] **Inventory tech** (if any backend/service surface): runtime version, frameworks (Spring, Quarkus, Micronaut, Node, plain), datastore, sync vs async style. Include in every agent's context.
 - [ ] **Inspect & select lenses**: from the diff, decide which lenses have real surface area (see Lens selection).
-- [ ] **Dispatch all selected agents in PARALLEL** in a single message (see `superpowers:dispatching-parallel-agents`). Each gets the dispatch prompt below with its own lens file path.
+- [ ] **Dispatch all selected agents in PARALLEL** in a single message. Each gets the dispatch prompt below with its own lens file path.
 - [ ] **Aggregate**: deduplicate, group by severity, tag by lens.
 - [ ] **Output the report** in the format below.
 
