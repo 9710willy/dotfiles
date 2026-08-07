@@ -14,17 +14,14 @@ dap.configurations.python = {
 		name = "Launch file",
 		program = "${file}",
 		pythonPath = function()
-			-- Check for virtual environment first
 			local venv_path = vim.fn.getenv("VIRTUAL_ENV")
 			if venv_path ~= vim.NIL and venv_path ~= "" then
 				return venv_path .. "/bin/python"
 			end
-			-- Check for local .venv
 			local cwd = vim.fn.getcwd()
 			if vim.fn.executable(cwd .. "/.venv/bin/python") == 1 then
 				return cwd .. "/.venv/bin/python"
 			end
-			-- Fallback to system python
 			return "/opt/homebrew/bin/python3"
 		end,
 	},

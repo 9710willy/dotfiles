@@ -71,52 +71,85 @@ return {
 	},
 	{
 		"echasnovski/mini.nvim",
-        version = false,
-    event = { 'BufReadPost', 'BufNewFile' },
-    init = function()
-      require('mini.sessions').setup {}
-      vim.api.nvim_set_hl(0, 'MiniStarterSection', { link = 'WhiteHover' })
-      vim.api.nvim_set_hl(0, 'MiniStarterItemPrefix', { link = 'Underlined' })
-      vim.api.nvim_set_hl(0, 'MiniStarterItemBullet', { link = 'Normal' })
-      vim.api.nvim_set_hl(
-        0,
-        'MiniStarterInactive',
-        { fg = '#666666', bg = '#141414', italic = true, strikethrough = true }
-      )
-      local starter = require 'mini.starter'
-      starter.setup {
-        header = '',
-        footer = '',
-        items = {
-          {
-            { name = 'new file', action = 'ene | startinsert', section = 'Actions' },
-            { name = 'update plugins', action = 'Lazy sync', section = 'Actions' },
-            { name = 'git', action = 'Neogit', section = 'Actions' },
-            { name = 'time startup', action = 'Lazy profile', section = 'Actions' },
-            { name = 'quit', action = 'qall', section = 'Actions' },
-          },
-          starter.sections.recent_files(5, false),
-          starter.sections.recent_files(5, true),
-          starter.sections.sessions(5, true),
-          {
-            { name = '󰊢 Git:  <leader>g=Neogit  hs=stage hr=reset hp=preview gy=link', action = '', section = 'Quick Tips' },
-            { name = '  Find: C-d=files C-g=grep C-a=buffers C-s=symbols <leader>S=replace', action = '', section = 'Quick Tips' },
-            { name = '  Nav:  z=flash Z=treesitter {/}=symbols K=hover C-space=select', action = '', section = 'Quick Tips' },
-            { name = '  Code: <leader>f=format re=extract rv=var ri=inline rp=dbgprint', action = '', section = 'Quick Tips' },
-            { name = '  Yank: p/P=put C-p/C-n=cycle history  ]p/[p=put indented', action = '', section = 'Quick Tips' },
-            { name = '  Fold: zc=close zo=open zM/zR=all zK=peek za=toggle', action = '', section = 'Quick Tips' },
-            { name = '  Diag: :Trouble xx=toggle xd=document xr=refs xq=qflist', action = '', section = 'Quick Tips' },
-          },
-        },
-        content_hooks = {
-          -- require('utils').icon_hook,
-          starter.gen_hook.adding_bullet '',
-          starter.gen_hook.aligning('center', 'center'),
-        },
-      }
-    end,
+		version = false,
+		event = { "BufReadPost", "BufNewFile" },
+		init = function()
+			-- With no file args BufReadPost/BufNewFile never fire; require a
+			-- mini module so lazy loads the plugin now and the start screen
+			-- can take over the empty session.
+			if vim.fn.argc(-1) == 0 then
+				require("mini.starter")
+			end
+		end,
 		config = function()
-      require('mini.surround').setup { search_method = 'cover_or_nearest', respect_selection_type = true }
+			require("mini.sessions").setup({})
+			vim.api.nvim_set_hl(0, "MiniStarterSection", { link = "WhiteHover" })
+			vim.api.nvim_set_hl(0, "MiniStarterItemPrefix", { link = "Underlined" })
+			vim.api.nvim_set_hl(0, "MiniStarterItemBullet", { link = "Normal" })
+			vim.api.nvim_set_hl(
+				0,
+				"MiniStarterInactive",
+				{ fg = "#666666", bg = "#141414", italic = true, strikethrough = true }
+			)
+			local starter = require("mini.starter")
+			starter.setup({
+				header = "",
+				footer = "",
+				items = {
+					{
+						{ name = "new file", action = "ene | startinsert", section = "Actions" },
+						{ name = "update plugins", action = "Lazy sync", section = "Actions" },
+						{ name = "git", action = "Neogit", section = "Actions" },
+						{ name = "time startup", action = "Lazy profile", section = "Actions" },
+						{ name = "quit", action = "qall", section = "Actions" },
+					},
+					starter.sections.recent_files(5, false),
+					starter.sections.recent_files(5, true),
+					starter.sections.sessions(5, true),
+					{
+						{
+							name = "󰊢 Git:  <leader>g=Neogit  hs=stage hr=reset hp=preview gy=link",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Find: C-d=files C-g=grep C-a=buffers C-s=symbols <leader>c=cmds <leader>S=replace",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Nav:  z=flash Z=treesitter {/}=symbols K=hover C-space=select",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Code: <leader>f=format re=extract rv=var ri=inline rp=dbgprint",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Yank: p/P=put C-p/C-n=cycle history  ]p/[p=put indented",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Fold: zc=close zo=open zM/zR=all zK=peek za=toggle",
+							action = "",
+							section = "Quick Tips",
+						},
+						{
+							name = "  Diag: :Trouble xx=toggle xd=document xr=refs xq=qflist",
+							action = "",
+							section = "Quick Tips",
+						},
+					},
+				},
+				content_hooks = {
+					starter.gen_hook.adding_bullet(""),
+					starter.gen_hook.aligning("center", "center"),
+				},
+			})
+			require("mini.surround").setup({ search_method = "cover_or_nearest", respect_selection_type = true })
 			require("mini.align").setup({ mappings = { start = "", start_with_preview = "g=" } })
 			require("mini.ai").setup({ search_method = "cover_or_nearest" })
 			require("mini.bracketed").setup({})
@@ -128,70 +161,85 @@ return {
 			})
 			require("mini.move").setup({})
 			require("mini.splitjoin").setup({ mappings = { toggle = "gJ" } })
-            require('mini.pairs').setup {
-        mappings = {
-          -- Prevents the action if the cursor is just before any character or next to a "\".
-          ['('] = { action = 'open', pair = '()', neigh_pattern = '[^\\][%s%)%]%}]' },
-          ['['] = { action = 'open', pair = '[]', neigh_pattern = '[^\\][%s%)%]%}]' },
-          ['{'] = { action = 'open', pair = '{}', neigh_pattern = '[^\\][%s%)%]%}]' },
-          -- This is default (prevents the action if the cursor is just next to a "\").
-          [')'] = { action = 'close', pair = '()', neigh_pattern = '[^\\].' },
-          [']'] = { action = 'close', pair = '[]', neigh_pattern = '[^\\].' },
-          ['}'] = { action = 'close', pair = '{}', neigh_pattern = '[^\\].' },
-          -- Prevents the action if the cursor is just before or next to any character.
-          ['"'] = { action = 'closeopen', pair = '""', neigh_pattern = '[^%w][^%w]', register = { cr = false } },
-          ["'"] = { action = 'closeopen', pair = "''", neigh_pattern = '[^%w][^%w]', register = { cr = false } },
-          ['`'] = { action = 'closeopen', pair = '``', neigh_pattern = '[^%w][^%w]', register = { cr = false } },
-        },
-      }
-      require('mini.operators').setup {}
-      require('mini.hipatterns').setup {
-        highlighters = { hex_color = require('mini.hipatterns').gen_highlighter.hex_color() },
-      }
-      local miniclue = require 'mini.clue'
-      miniclue.setup {
-        triggers = {
-          -- Leader triggers
-          { mode = 'n', keys = '<Leader>' },
-          { mode = 'x', keys = '<Leader>' },
+			require("mini.pairs").setup({
+				mappings = {
+					-- Prevents the action if the cursor is just before any character or next to a "\".
+					["("] = { action = "open", pair = "()", neigh_pattern = "[^\\][%s%)%]%}]" },
+					["["] = { action = "open", pair = "[]", neigh_pattern = "[^\\][%s%)%]%}]" },
+					["{"] = { action = "open", pair = "{}", neigh_pattern = "[^\\][%s%)%]%}]" },
+					-- This is default (prevents the action if the cursor is just next to a "\").
+					[")"] = { action = "close", pair = "()", neigh_pattern = "[^\\]." },
+					["]"] = { action = "close", pair = "[]", neigh_pattern = "[^\\]." },
+					["}"] = { action = "close", pair = "{}", neigh_pattern = "[^\\]." },
+					-- Prevents the action if the cursor is just before or next to any character.
+					['"'] = {
+						action = "closeopen",
+						pair = '""',
+						neigh_pattern = "[^%w][^%w]",
+						register = { cr = false },
+					},
+					["'"] = {
+						action = "closeopen",
+						pair = "''",
+						neigh_pattern = "[^%w][^%w]",
+						register = { cr = false },
+					},
+					["`"] = {
+						action = "closeopen",
+						pair = "``",
+						neigh_pattern = "[^%w][^%w]",
+						register = { cr = false },
+					},
+				},
+			})
+			require("mini.operators").setup({})
+			require("mini.hipatterns").setup({
+				highlighters = { hex_color = require("mini.hipatterns").gen_highlighter.hex_color() },
+			})
+			local miniclue = require("mini.clue")
+			miniclue.setup({
+				triggers = {
+					-- Leader triggers
+					{ mode = "n", keys = "<Leader>" },
+					{ mode = "x", keys = "<Leader>" },
 
-          -- Built-in completion
-          { mode = 'i', keys = '<C-x>' },
+					-- Built-in completion
+					{ mode = "i", keys = "<C-x>" },
 
-          -- `g` key
-          { mode = 'n', keys = 'g' },
-          { mode = 'x', keys = 'g' },
+					-- `g` key
+					{ mode = "n", keys = "g" },
+					{ mode = "x", keys = "g" },
 
-          -- Marks
-          { mode = 'n', keys = "'" },
-          { mode = 'n', keys = '`' },
-          { mode = 'x', keys = "'" },
-          { mode = 'x', keys = '`' },
+					-- Marks
+					{ mode = "n", keys = "'" },
+					{ mode = "n", keys = "`" },
+					{ mode = "x", keys = "'" },
+					{ mode = "x", keys = "`" },
 
-          -- Registers
-          { mode = 'n', keys = '"' },
-          { mode = 'x', keys = '"' },
-          { mode = 'i', keys = '<C-r>' },
-          { mode = 'c', keys = '<C-r>' },
+					-- Registers
+					{ mode = "n", keys = '"' },
+					{ mode = "x", keys = '"' },
+					{ mode = "i", keys = "<C-r>" },
+					{ mode = "c", keys = "<C-r>" },
 
-          -- Window commands
-          { mode = 'n', keys = '<C-w>' },
+					-- Window commands
+					{ mode = "n", keys = "<C-w>" },
 
-          -- `z` key
-          { mode = 'n', keys = 'z' },
-          { mode = 'x', keys = 'z' },
-        },
+					-- `z` key
+					{ mode = "n", keys = "z" },
+					{ mode = "x", keys = "z" },
+				},
 
-        clues = {
-          -- Enhance this by adding descriptions for <Leader> mapping groups
-          miniclue.gen_clues.builtin_completion(),
-          miniclue.gen_clues.g(),
-          miniclue.gen_clues.marks(),
-          miniclue.gen_clues.registers(),
-          miniclue.gen_clues.windows(),
-          miniclue.gen_clues.z(),
-        },
-      }
+				clues = {
+					-- Enhance this by adding descriptions for <Leader> mapping groups
+					miniclue.gen_clues.builtin_completion(),
+					miniclue.gen_clues.g(),
+					miniclue.gen_clues.marks(),
+					miniclue.gen_clues.registers(),
+					miniclue.gen_clues.windows(),
+					miniclue.gen_clues.z(),
+				},
+			})
 		end,
 	},
 	{
@@ -199,20 +247,31 @@ return {
 		config = function()
 			require("settings.matchup")
 		end,
-    event = { 'BufReadPost', 'BufNewFile' },
+		event = { "BufReadPost", "BufNewFile" },
 	},
 	{ "romainl/vim-cool", event = "VeryLazy" },
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
-      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-      'nvim-telescope/telescope-ui-select.nvim',
-      'debugloop/telescope-undo.nvim',
+			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+			"nvim-telescope/telescope-ui-select.nvim",
+			"debugloop/telescope-undo.nvim",
 		},
-		init = function()
-			require("settings.telescope_setup")
-		end,
+		keys = {
+			{
+				"<c-a>",
+				"<cmd>Telescope buffers show_all_buffers=true theme=get_dropdown<cr>",
+				silent = true,
+				desc = "Buffers",
+			},
+			{ "<c-d>", "<cmd>Telescope find_files theme=get_dropdown<cr>", silent = true, desc = "Find files" },
+			{ "<c-g>", "<cmd>Telescope live_grep theme=get_dropdown<cr>", silent = true, desc = "Live grep" },
+			-- <c-p>/<c-n> belong to yanky (yank-history cycle); commands live here
+			{ "<leader>c", "<cmd>Telescope commands theme=get_dropdown<cr>", silent = true, desc = "Commands" },
+			{ "<c-s>", "<cmd>Telescope aerial theme=get_dropdown<cr>", silent = true, desc = "Symbols (Aerial)" },
+			{ "<leader>j", "<cmd>Telescope jumplist theme=get_dropdown<cr>", silent = true, desc = "Jumplist" },
+		},
 		config = function()
 			require("settings.telescope")
 		end,
@@ -224,8 +283,11 @@ return {
 			require("settings.colors")
 		end,
 		lazy = false,
+		priority = 1000,
 	},
-	"neovim/nvim-lspconfig",
+	-- provides the base lsp/*.lua server configs that vim.lsp.enable()
+	-- resolves; must be on the runtimepath before FileType fires
+	{ "neovim/nvim-lspconfig", event = { "BufReadPre", "BufNewFile" } },
 	-- LSP progress indicator (very lightweight)
 	{ "j-hui/fidget.nvim", event = "LspAttach", opts = { notification = { window = { winblend = 0 } } } },
 	{ "barreiroleo/ltex_extra.nvim", ft = { "markdown", "tex", "text" } },
@@ -233,7 +295,7 @@ return {
 	{
 		"smjonas/inc-rename.nvim",
 		opts = {},
-    event = { 'BufReadPost', 'BufNewFile' },
+		event = { "BufReadPost", "BufNewFile" },
 	},
 	{
 		"folke/trouble.nvim",
@@ -246,39 +308,55 @@ return {
 			{ "<leader>xr", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", desc = "LSP References" },
 			{ "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
 			{ "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
-			{ "[q", function()
-				if require("trouble").is_open() then
-					require("trouble").prev({ skip_groups = true, jump = true })
-				else
-					local ok, err = pcall(vim.cmd.cprev)
-					if not ok then vim.notify(err, vim.log.levels.ERROR) end
-				end
-			end, desc = "Previous Trouble/Quickfix" },
-			{ "]q", function()
-				if require("trouble").is_open() then
-					require("trouble").next({ skip_groups = true, jump = true })
-				else
-					local ok, err = pcall(vim.cmd.cnext)
-					if not ok then vim.notify(err, vim.log.levels.ERROR) end
-				end
-			end, desc = "Next Trouble/Quickfix" },
+			{
+				"[q",
+				function()
+					if require("trouble").is_open() then
+						require("trouble").prev({ skip_groups = true, jump = true })
+					else
+						local ok, err = pcall(vim.cmd.cprev)
+						if not ok then
+							vim.notify(err, vim.log.levels.ERROR)
+						end
+					end
+				end,
+				desc = "Previous Trouble/Quickfix",
+			},
+			{
+				"]q",
+				function()
+					if require("trouble").is_open() then
+						require("trouble").next({ skip_groups = true, jump = true })
+					else
+						local ok, err = pcall(vim.cmd.cnext)
+						if not ok then
+							vim.notify(err, vim.log.levels.ERROR)
+						end
+					end
+				end,
+				desc = "Next Trouble/Quickfix",
+			},
 		},
 	},
 	"p00f/clangd_extensions.nvim",
-  {
-  'nvim-treesitter/nvim-treesitter',
-    dependencies = {
-      'nvim-treesitter/nvim-treesitter-refactor',
-      'RRethy/nvim-treesitter-textsubjects',
-      'RRethy/nvim-treesitter-endwise',
-      'windwp/nvim-ts-autotag',
-    },
-    build = ':TSUpdate',
-    event = { 'BufReadPost', 'BufNewFile' },
-    config = function()
-      require 'settings.treesitter'
-    end,
-  },
+	{
+		"nvim-treesitter/nvim-treesitter",
+		-- NOTE: the pinned commit is the "main" branch rewrite. The old
+		-- module-based add-ons (refactor, textsubjects, endwise) depend on
+		-- the removed nvim-treesitter.configs API and errored on every
+		-- BufReadPost, so they are intentionally dropped without
+		-- replacements. Incremental selection is wired in
+		-- settings/treesitter.lua (<C-Space>/<BS>); the core 0.12 an/in
+		-- textobjects stay shadowed by mini.ai's around/inside-next.
+		dependencies = {
+			"windwp/nvim-ts-autotag",
+		},
+		build = ":TSUpdate",
+		event = { "BufReadPost", "BufNewFile" },
+		config = function()
+			require("settings.treesitter")
+		end,
+	},
 	{
 		"danymat/neogen",
 		dependencies = "nvim-treesitter",
@@ -297,6 +375,13 @@ return {
 			"lukas-reineke/cmp-under-comparator",
 			"hrsh7th/cmp-cmdline",
 			"hrsh7th/cmp-nvim-lsp-document-symbol",
+			-- registers the "snippets" cmp source; as a top-level spec with
+			-- no trigger it never loaded and snippet completion was dead
+			{
+				"garymjr/nvim-snippets",
+				dependencies = { "rafamadriz/friendly-snippets" },
+				opts = { friendly_snippets = true },
+			},
 		},
 		config = function()
 			require("settings.cmp")
@@ -313,7 +398,7 @@ return {
 		end,
 		dependencies = {
 			"jbyuki/one-small-step-for-vimkind",
-      "nvim-neotest/nvim-nio",
+			"nvim-neotest/nvim-nio",
 			{
 				"rcarriga/nvim-dap-ui",
 				opts = {},
@@ -342,10 +427,8 @@ return {
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
-		init = function()
-			vim.g.neo_tree_remove_legacy_commands = true
-		end,
 		cmd = "Neotree",
+		-- fired by the directory-buffer autocmd in settings/autocmds.lua
 		event = "User EditingDirectory",
 		config = function()
 			require("settings.neotree")
@@ -357,17 +440,17 @@ return {
 		},
 	},
 	{ "Civitasv/cmake-tools.nvim", lazy = true, opts = { cmake_always_use_terminal = true } },
-  {
-    'folke/lazydev.nvim',
-    ft = 'lua',
-    opts = {
-      library = {
-        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-        { path = 'nvim-dap-ui' },
-      },
-    },
-  },
-  { 'b0o/schemastore.nvim', lazy = true },
+	{
+		"folke/lazydev.nvim",
+		ft = "lua",
+		opts = {
+			library = {
+				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
+				{ path = "nvim-dap-ui" },
+			},
+		},
+	},
+	{ "b0o/schemastore.nvim", lazy = true },
 
 	{
 		"lewis6991/gitsigns.nvim",
@@ -379,18 +462,18 @@ return {
 	},
 	{
 		"NeogitOrg/neogit",
-    branch = 'master',
+		branch = "master",
 		cmd = "Neogit",
 		config = function()
 			require("settings.neogit")
 		end,
-    dependencies = {
-      {
-        'sindrets/diffview.nvim',
-        dependencies = 'nvim-lua/plenary.nvim',
-      },
-      'telescope.nvim',
-    },
+		dependencies = {
+			{
+				"sindrets/diffview.nvim",
+				dependencies = "nvim-lua/plenary.nvim",
+			},
+			"telescope.nvim",
+		},
 	},
 	{
 		"akinsho/git-conflict.nvim",
@@ -402,7 +485,7 @@ return {
 		"lewis6991/hover.nvim",
 		event = "BufReadPost",
 		config = function()
-			require("hover").setup{
+			require("hover").setup({
 				init = function()
 					require("hover.providers.lsp")
 					require("hover.providers.dap")
@@ -412,7 +495,7 @@ return {
 				},
 				preview_window = false,
 				title = true,
-			}
+			})
 
 			vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
 			vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
@@ -431,9 +514,7 @@ return {
 			})
 		end,
 	},
-  { 'rafamadriz/friendly-snippets' },
-  { 'garymjr/nvim-snippets', opts = { friendly_snippets = true } },
-  -- targets.vim removed - mini.ai + nvim-various-textobjs cover the same functionality
+	-- targets.vim removed - mini.ai + nvim-various-textobjs cover the same functionality
 	{
 		"stevearc/aerial.nvim",
 		opts = {
@@ -469,14 +550,13 @@ return {
 					border = "curved",
 				},
 			})
-			-- Terminal keymaps
-			vim.keymap.set('n', '<leader>tt', '<cmd>ToggleTerm<cr>', { desc = 'Toggle terminal' })
-			vim.keymap.set('n', '<leader>t1', '<cmd>1ToggleTerm<cr>', { desc = 'Terminal 1' })
-			vim.keymap.set('n', '<leader>t2', '<cmd>2ToggleTerm<cr>', { desc = 'Terminal 2' })
-			vim.keymap.set('n', '<leader>t3', '<cmd>3ToggleTerm<cr>', { desc = 'Terminal 3' })
-			vim.keymap.set('t', '<esc><esc>', [[<C-\><C-n>]], { desc = 'Exit terminal mode' })
+			vim.keymap.set("n", "<leader>tt", "<cmd>ToggleTerm<cr>", { desc = "Toggle terminal" })
+			vim.keymap.set("n", "<leader>t1", "<cmd>1ToggleTerm<cr>", { desc = "Terminal 1" })
+			vim.keymap.set("n", "<leader>t2", "<cmd>2ToggleTerm<cr>", { desc = "Terminal 2" })
+			vim.keymap.set("n", "<leader>t3", "<cmd>3ToggleTerm<cr>", { desc = "Terminal 3" })
+			vim.keymap.set("t", "<esc><esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" })
 		end,
-		keys = { '<leader>tt', '<leader>t1', '<leader>t2', '<leader>t3' },
+		keys = { "<leader>tt", "<leader>t1", "<leader>t2", "<leader>t3" },
 	},
 	{
 		"willothy/flatten.nvim",
@@ -493,7 +573,7 @@ return {
 		event = "TermOpen",
 	},
 	{
-		"nvim-focus/focus.nvim",  -- maintained fork of beauwilliams/focus.nvim
+		"nvim-focus/focus.nvim", -- maintained fork of beauwilliams/focus.nvim
 		version = "*",
 		config = function()
 			require("focus").setup({
@@ -505,7 +585,6 @@ return {
 					cursorline = false,
 				},
 			})
-			-- Exclude filetypes
 			local ignore_filetypes = { "toggleterm", "TelescopePrompt", "neo-tree", "Trouble" }
 			local ignore_buftypes = { "nofile", "prompt", "popup" }
 			local augroup = vim.api.nvim_create_augroup("FocusDisable", { clear = true })
@@ -535,18 +614,18 @@ return {
 		event = "VeryLazy",
 	},
 	{
-    'vigemus/iron.nvim',
-		cmd = { "IronRepl", "IronFocus" },
+		"vigemus/iron.nvim",
+		cmd = { "IronRepl", "IronRestart", "IronFocus", "IronHide" },
 		init = function()
-      vim.keymap.set('n', '<leader>rs', '<cmd>IronRepl<cr>', {desc = "Open Iron REPL"})
-      vim.keymap.set('n', '<leader>rr', '<cmd>IronRestart<cr>', {desc = "Restart Iron REPL"})
-      vim.keymap.set('n', '<leader>rf', '<cmd>IronFocus<cr>', {desc = "Focus Iron REPL"})
-      vim.keymap.set('n', '<leader>rh', '<cmd>IronHide<cr>', {desc = "Hide Iron REPL"})
+			vim.keymap.set("n", "<leader>rs", "<cmd>IronRepl<cr>", { desc = "Open Iron REPL" })
+			vim.keymap.set("n", "<leader>rr", "<cmd>IronRestart<cr>", { desc = "Restart Iron REPL" })
+			vim.keymap.set("n", "<leader>rf", "<cmd>IronFocus<cr>", { desc = "Focus Iron REPL" })
+			vim.keymap.set("n", "<leader>rh", "<cmd>IronHide<cr>", { desc = "Hide Iron REPL" })
 		end,
 		config = function()
 			require("iron.core").setup({
 				config = {
-          repl_open_cmd = require('iron.view').center '40%',
+					repl_open_cmd = require("iron.view").center("40%"),
 					repl_definition = {
 						python = require("iron.fts.python").ptipython,
 						ocaml = require("iron.fts.ocaml").utop,
@@ -573,7 +652,7 @@ return {
 	},
 	{
 		"utilyre/barbecue.nvim",
-    event = { 'BufReadPost', 'BufNewFile' },
+		event = { "BufReadPost", "BufNewFile" },
 		name = "barbecue",
 		version = "*",
 		dependencies = {
@@ -633,19 +712,20 @@ return {
 				lua = { "selene" },
 				sh = { "shellcheck" },
 				bash = { "shellcheck" },
-				zsh = { "shellcheck" },
+				-- no zsh: shellcheck refuses zsh scripts
 				vim = { "vint" },
 			}
 
-			-- Trigger linting
+			local lint_group = vim.api.nvim_create_augroup("nvim_lint", { clear = true })
 			vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
+				group = lint_group,
 				callback = function()
 					lint.try_lint()
 				end,
 			})
 
-			-- GitHub Actions linting
 			vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+				group = lint_group,
 				pattern = { ".github/**/*.yaml", ".github/**/*.yml" },
 				callback = function()
 					lint.try_lint("actionlint")
@@ -659,7 +739,6 @@ return {
 		cmd = { "ConformInfo" },
 		keys = {
 			{
-				-- Customize or remove this keymap to your liking
 				"<leader>f",
 				function()
 					require("conform").format({ async = true, lsp_fallback = true })
@@ -678,7 +757,7 @@ return {
 				typescript = { "eslint_d", "prettierd" },
 				rust = { "rustfmt" },
 				bash = { "shfmt", "shellcheck" },
-				zsh = { "shfmt", "shellcheck" },
+				zsh = { "shfmt" }, -- shellcheck refuses zsh scripts
 				sh = { "shfmt", "shellcheck" },
 				toml = { "taplo" },
 				["_"] = { "trim_whitespace" },
@@ -691,8 +770,8 @@ return {
 			require("noice").setup({
 				-- Disable features handled by other plugins or not needed
 				lsp = {
-					progress = { enabled = false },  -- fidget.nvim handles this
-					hover = { enabled = false },     -- using hover.nvim
+					progress = { enabled = false }, -- fidget.nvim handles this
+					hover = { enabled = false }, -- using hover.nvim
 					signature = { enabled = false }, -- cmp-nvim-lsp-signature-help handles this
 					override = {
 						["vim.lsp.util.convert_input_to_markdown_lines"] = true,
@@ -712,12 +791,12 @@ return {
 					command_palette = true,
 					long_message_to_split = true,
 					inc_rename = true,
-					lsp_doc_border = false,  -- disable, adds overhead
+					lsp_doc_border = false, -- disable, adds overhead
 				},
 				-- Disable features we don't use
 				messages = { view_search = false },
 				notify = { enabled = true },
-				popupmenu = { enabled = false },  -- use cmp's native menu
+				popupmenu = { enabled = false }, -- use cmp's native menu
 			})
 		end,
 		dependencies = { "MunifTanjim/nui.nvim" },
@@ -725,7 +804,6 @@ return {
 	},
 	{
 		"SmiteshP/nvim-navic",
-		dependencies = "neovim/nvim-lspconfig",
 		opts = { lazy_update_context = true },
 	},
 	{
@@ -790,7 +868,7 @@ return {
 	{
 		"chrisgrieser/nvim-various-textobjs",
 		opts = { keymaps = { useDefaults = true } },
-    event = { 'BufReadPost', 'BufNewFile' },
+		event = { "BufReadPost", "BufNewFile" },
 	},
 	{
 		"linux-cultist/venv-selector.nvim",
@@ -840,10 +918,35 @@ return {
 		dependencies = { "nvim-lua/plenary.nvim" },
 		cmd = "Spectre",
 		keys = {
-			{ "<leader>S", function() require("spectre").toggle() end, desc = "Toggle Spectre" },
-			{ "<leader>sw", function() require("spectre").open_visual({ select_word = true }) end, desc = "Search current word" },
-			{ "<leader>sw", function() require("spectre").open_visual() end, mode = "v", desc = "Search selection" },
-			{ "<leader>sp", function() require("spectre").open_file_search({ select_word = true }) end, desc = "Search in file" },
+			{
+				"<leader>S",
+				function()
+					require("spectre").toggle()
+				end,
+				desc = "Toggle Spectre",
+			},
+			{
+				"<leader>sw",
+				function()
+					require("spectre").open_visual({ select_word = true })
+				end,
+				desc = "Search current word",
+			},
+			{
+				"<leader>sw",
+				function()
+					require("spectre").open_visual()
+				end,
+				mode = "v",
+				desc = "Search selection",
+			},
+			{
+				"<leader>sp",
+				function()
+					require("spectre").open_file_search({ select_word = true })
+				end,
+				desc = "Search in file",
+			},
 		},
 		opts = {
 			live_update = true,
@@ -866,15 +969,73 @@ return {
 		"ThePrimeagen/refactoring.nvim",
 		dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
 		keys = {
-			{ "<leader>re", function() require("refactoring").refactor("Extract Function") end, mode = "x", desc = "Extract function" },
-			{ "<leader>rf", function() require("refactoring").refactor("Extract Function To File") end, mode = "x", desc = "Extract to file" },
-			{ "<leader>rv", function() require("refactoring").refactor("Extract Variable") end, mode = "x", desc = "Extract variable" },
-			{ "<leader>rI", function() require("refactoring").refactor("Inline Function") end, desc = "Inline function" },
-			{ "<leader>ri", function() require("refactoring").refactor("Inline Variable") end, mode = { "n", "x" }, desc = "Inline variable" },
-			{ "<leader>rb", function() require("refactoring").refactor("Extract Block") end, desc = "Extract block" },
-			{ "<leader>rB", function() require("refactoring").refactor("Extract Block To File") end, desc = "Extract block to file" },
-			{ "<leader>rp", function() require("refactoring").debug.printf({ below = true }) end, desc = "Debug print" },
-			{ "<leader>rc", function() require("refactoring").debug.cleanup({}) end, desc = "Debug cleanup" },
+			{
+				"<leader>re",
+				function()
+					require("refactoring").refactor("Extract Function")
+				end,
+				mode = "x",
+				desc = "Extract function",
+			},
+			{
+				"<leader>rf",
+				function()
+					require("refactoring").refactor("Extract Function To File")
+				end,
+				mode = "x",
+				desc = "Extract to file",
+			},
+			{
+				"<leader>rv",
+				function()
+					require("refactoring").refactor("Extract Variable")
+				end,
+				mode = "x",
+				desc = "Extract variable",
+			},
+			{
+				"<leader>rI",
+				function()
+					require("refactoring").refactor("Inline Function")
+				end,
+				desc = "Inline function",
+			},
+			{
+				"<leader>ri",
+				function()
+					require("refactoring").refactor("Inline Variable")
+				end,
+				mode = { "n", "x" },
+				desc = "Inline variable",
+			},
+			{
+				"<leader>rb",
+				function()
+					require("refactoring").refactor("Extract Block")
+				end,
+				desc = "Extract block",
+			},
+			{
+				"<leader>rB",
+				function()
+					require("refactoring").refactor("Extract Block To File")
+				end,
+				desc = "Extract block to file",
+			},
+			{
+				"<leader>rp",
+				function()
+					require("refactoring").debug.printf({ below = true })
+				end,
+				desc = "Debug print",
+			},
+			{
+				"<leader>rc",
+				function()
+					require("refactoring").debug.cleanup({})
+				end,
+				desc = "Debug cleanup",
+			},
 		},
 		opts = {},
 	},
@@ -884,14 +1045,52 @@ return {
 		branch = "harpoon2",
 		dependencies = { "nvim-lua/plenary.nvim" },
 		keys = {
-			{ "<leader>a", function() require("harpoon"):list():add() end, desc = "Harpoon add" },
-			{ "<leader>h", function() require("harpoon").ui:toggle_quick_menu(require("harpoon"):list()) end, desc = "Harpoon menu" },
-			{ "<leader>1", function() require("harpoon"):list():select(1) end, desc = "Harpoon 1" },
-			{ "<leader>2", function() require("harpoon"):list():select(2) end, desc = "Harpoon 2" },
-			{ "<leader>3", function() require("harpoon"):list():select(3) end, desc = "Harpoon 3" },
-			{ "<leader>4", function() require("harpoon"):list():select(4) end, desc = "Harpoon 4" },
+			{
+				"<leader>a",
+				function()
+					require("harpoon"):list():add()
+				end,
+				desc = "Harpoon add",
+			},
+			{
+				"<leader>h",
+				function()
+					require("harpoon").ui:toggle_quick_menu(require("harpoon"):list())
+				end,
+				desc = "Harpoon menu",
+			},
+			{
+				"<leader>1",
+				function()
+					require("harpoon"):list():select(1)
+				end,
+				desc = "Harpoon 1",
+			},
+			{
+				"<leader>2",
+				function()
+					require("harpoon"):list():select(2)
+				end,
+				desc = "Harpoon 2",
+			},
+			{
+				"<leader>3",
+				function()
+					require("harpoon"):list():select(3)
+				end,
+				desc = "Harpoon 3",
+			},
+			{
+				"<leader>4",
+				function()
+					require("harpoon"):list():select(4)
+				end,
+				desc = "Harpoon 4",
+			},
 		},
-		config = function() require("harpoon"):setup() end,
+		config = function()
+			require("harpoon"):setup()
+		end,
 	},
 	-- Better fold preview
 	{
@@ -899,9 +1098,27 @@ return {
 		dependencies = { "kevinhwang91/promise-async" },
 		event = "BufReadPost",
 		keys = {
-			{ "zR", function() require("ufo").openAllFolds() end, desc = "Open all folds" },
-			{ "zM", function() require("ufo").closeAllFolds() end, desc = "Close all folds" },
-			{ "zK", function() require("ufo").peekFoldedLinesUnderCursor() end, desc = "Peek fold" },
+			{
+				"zR",
+				function()
+					require("ufo").openAllFolds()
+				end,
+				desc = "Open all folds",
+			},
+			{
+				"zM",
+				function()
+					require("ufo").closeAllFolds()
+				end,
+				desc = "Close all folds",
+			},
+			{
+				"zK",
+				function()
+					require("ufo").peekFoldedLinesUnderCursor()
+				end,
+				desc = "Peek fold",
+			},
 		},
 		opts = {
 			provider_selector = function()

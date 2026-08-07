@@ -1,5 +1,5 @@
 vim.g.mapleader = [[ ]]
-vim.g.localleader = [[,]]
+vim.g.maplocalleader = [[,]]
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
@@ -23,6 +23,9 @@ vim.g.loaded_node_provider = 0
 
 require("lazy").setup("plugins", {
 	defaults = { lazy = true },
+	-- no plugin here needs luarocks; disabling stops the hererocks
+	-- checkhealth errors
+	rocks = { enabled = false },
 	performance = {
 		rtp = {
 			disabled_plugins = {
@@ -42,4 +45,4 @@ require("lazy").setup("plugins", {
 require("settings.mappings")
 require("settings.autocmds")
 require("settings.config")
-require("settings.colors")
+-- settings.colors already runs as the gruvbox plugin config (lazy = false)

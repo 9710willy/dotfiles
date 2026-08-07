@@ -1,2 +1,2 @@
 setlocal nowrap
-map q <cmd>:cclose<cr>
+nnoremap <buffer> q <cmd>cclose<cr>

@@ -1,4 +1,4 @@
 return {
-  cmd = { "neocmakelsp", "--stdio" },
-  filetypes = { "cmake" },
+	cmd = { "neocmakelsp", "--stdio" },
+	filetypes = { "cmake" },
 }

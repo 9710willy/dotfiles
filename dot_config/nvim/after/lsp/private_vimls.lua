@@ -1,4 +1,4 @@
 return {
-  cmd = { "vim-language-server", "--stdio" },
-  filetypes = { "vim" },
+	cmd = { "vim-language-server", "--stdio" },
+	filetypes = { "vim" },
 }

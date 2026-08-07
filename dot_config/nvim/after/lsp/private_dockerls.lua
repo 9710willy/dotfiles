@@ -1,4 +1,4 @@
 return {
-  cmd = { "docker-langserver", "--stdio" },
-  filetypes = { "dockerfile" },
+	cmd = { "docker-langserver", "--stdio" },
+	filetypes = { "dockerfile" },
 }

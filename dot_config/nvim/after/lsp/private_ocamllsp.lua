@@ -1,4 +1,4 @@
 return {
-  cmd = { "ocamllsp" },
-  filetypes = { "ocaml", "ocaml.interface", "ocamllex", "reason", "dune" },
+	cmd = { "ocamllsp" },
+	filetypes = { "ocaml", "ocaml.interface", "ocamllex", "reason", "dune" },
 }
