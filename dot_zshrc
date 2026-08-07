@@ -8,10 +8,9 @@ fi
 # =============================================================================
 # PATH Setup (order matters - later entries take precedence)
 # =============================================================================
-# Homebrew (base for many tools)
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
+# Homebrew is initialized in ~/.zprofile (login shells); PATH is inherited here.
+# Keep PATH free of duplicates when this file is re-sourced or shells nest.
+typeset -U path PATH
 
 # User local binaries
 export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
@@ -63,7 +62,7 @@ zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/compcache"
 
 # =============================================================================
 # Shell Options

@@ -32,7 +32,7 @@ echo ""
 echo -e "${CYAN}Tip: Create a 'macOS Updates' rule group in Little Snitch${NC}"
 echo -e "${CYAN}     that you can quickly enable/disable.${NC}"
 echo ""
-read -p "Press Enter when Little Snitch is configured (or Ctrl+C to abort)..."
+read -rp "Press Enter when Little Snitch is configured (or Ctrl+C to abort)..."
 
 echo ""
 echo -e "${GREEN}Checking for updates...${NC}"

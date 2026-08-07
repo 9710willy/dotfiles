@@ -1,1 +1,4 @@
-. "$HOME/.local/bin/env"
+# uv installer drops this file; source it only if present
+if [ -f "$HOME/.local/bin/env" ]; then
+    . "$HOME/.local/bin/env"
+fi

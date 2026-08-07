@@ -17,9 +17,6 @@ cursor-style-blink = false
 # Shell integration
 shell-integration = zsh
 
-# Notifications (for Claude Code input prompts)
-desktop-notifications = true
-
 # Mouse
 mouse-hide-while-typing = true
 copy-on-select = clipboard
@@ -29,31 +26,11 @@ scrollback-limit = 50000
 
 # Quick terminal (like iTerm hotkey window)
 keybind = global:cmd+grave_accent=toggle_quick_terminal
-quick-terminal-position = top
 quick-terminal-animation-duration = 0.1
 
-# Keybindings for splits (tmux-style with cmd)
-keybind = cmd+d=new_split:right
-keybind = cmd+shift+d=new_split:down
-keybind = cmd+w=close_surface
-keybind = cmd+shift+enter=toggle_split_zoom
-
-# Navigation between splits
-keybind = cmd+alt+left=goto_split:left
-keybind = cmd+alt+right=goto_split:right
-keybind = cmd+alt+up=goto_split:top
-keybind = cmd+alt+down=goto_split:bottom
-
-# Tab management
-keybind = cmd+t=new_tab
+# Tab switching (splits, tabs, font size, paste all use Ghostty defaults)
 keybind = cmd+shift+left=previous_tab
 keybind = cmd+shift+right=next_tab
 
-# Font size
-keybind = cmd+plus=increase_font_size:1
-keybind = cmd+minus=decrease_font_size:1
-keybind = cmd+0=reset_font_size
-
-# Clipboard
+# Plain copy (default copy_to_clipboard:mixed would include styled text)
 keybind = cmd+c=copy_to_clipboard
-keybind = cmd+v=paste_from_clipboard

@@ -14,7 +14,9 @@ cleanup() {
     local path="$2"
 
     if [[ -e "$path" ]]; then
-        local size=$(du -sk "$path" 2>/dev/null | cut -f1 || echo 0)
+        local size
+        size=$(du -sk "$path" 2>/dev/null | cut -f1)
+        [[ -n "$size" ]] || size=0
         if [[ "$DRY_RUN" == "true" ]]; then
             echo "[DRY RUN] Would remove: $name (~${size}KB)"
         else
