@@ -47,13 +47,7 @@ local function enable_treesitter(buf, ft)
 		return
 	end
 	install_attempted[lang] = true
-	-- ~/bin/cc shadows the system C compiler in PATH (it is not a
-	-- compiler), and "tree-sitter build" resolves $CC, then "cc". Point
-	-- it at the real compiler for the duration of the build.
-	local prev_cc = vim.env.CC
-	vim.env.CC = "/usr/bin/cc"
 	ts.install({ lang }):await(function()
-		vim.env.CC = prev_cc
 		if vim.api.nvim_buf_is_valid(buf) and vim.treesitter.language.add(lang) then
 			vim.treesitter.start(buf, lang)
 		end

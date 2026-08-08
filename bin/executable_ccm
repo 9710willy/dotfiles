@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# cc - Claude Code session manager
+# ccm - Claude Code session manager
+# (was "cc" — renamed 2026-08-08: it shadowed the system C compiler)
 # Usage:
-#   cc              - Start Claude Code in current directory (or attach to existing)
-#   cc <path>       - Start Claude Code session for specific project
-#   cc -l           - List all Claude Code sessions
-#   cc -s           - Switch to a Claude session using fzf
-#   cc -k           - Kill a Claude session using fzf
-#   cc -K           - Kill all Claude sessions
+#   ccm             - Start Claude Code in current directory (or attach to existing)
+#   ccm <path>      - Start Claude Code session for specific project
+#   ccm -l          - List all Claude Code sessions
+#   ccm -s          - Switch to a Claude session using fzf
+#   ccm -k          - Kill a Claude session using fzf
+#   ccm -K          - Kill all Claude sessions
 
 set -e
 
@@ -82,16 +83,16 @@ case "${1:-}" in
         ;;
     -h|--help)
         cat << 'EOF'
-cc - Claude Code session manager
+ccm - Claude Code session manager
 
 Usage:
-  cc              Start/attach Claude Code in current directory
-  cc <path>       Start Claude Code session for specific project
-  cc -l           List all Claude Code sessions
-  cc -s           Switch to a Claude session (fzf)
-  cc -k           Kill a Claude session (fzf)
-  cc -K           Kill all Claude sessions
-  cc -h           Show this help
+  ccm             Start/attach Claude Code in current directory
+  ccm <path>      Start Claude Code session for specific project
+  ccm -l          List all Claude Code sessions
+  ccm -s          Switch to a Claude session (fzf)
+  ccm -k          Kill a Claude session (fzf)
+  ccm -K          Kill all Claude sessions
+  ccm -h          Show this help
 
 Keybindings (in tmux):
   Ctrl-a N        New Claude session (prompts for path)
@@ -101,7 +102,7 @@ Keybindings (in tmux):
 Tips:
   - Each project gets its own persistent Claude session
   - Sessions survive terminal closes (tmux resurrect)
-  - Use 'cc -s' to quickly jump between projects
+  - Use 'ccm -s' to quickly jump between projects
 EOF
         ;;
     *)

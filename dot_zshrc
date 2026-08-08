@@ -137,12 +137,12 @@ alias zshrc='nvim ~/.zshrc'
 alias reload='source ~/.zshrc'
 
 # Claude Code session management
-alias ccs='cc -s'          # Switch Claude sessions
-alias ccl='cc -l'          # List Claude sessions
-alias cck='cc -k'          # Kill a Claude session
-alias ccK='cc -K'          # Kill all Claude sessions
-alias ccwork='cc ~/work'
-alias ccdot='cc ~/dotfiles'
+alias ccs='ccm -s'          # Switch Claude sessions
+alias ccl='ccm -l'          # List Claude sessions
+alias cck='ccm -k'          # Kill a Claude session
+alias ccK='ccm -K'          # Kill all Claude sessions
+alias ccwork='ccm ~/work'
+alias ccdot='ccm ~/dotfiles'
 
 # =============================================================================
 # Helper Functions
