@@ -1,0 +1,6 @@
+# Global gitignore. Git reads this path by default (XDG) when
+# core.excludesFile is not set. Keep this to OS/editor junk only —
+# project-specific ignores belong in each repo's .gitignore.
+.DS_Store
+._*
+Thumbs.db

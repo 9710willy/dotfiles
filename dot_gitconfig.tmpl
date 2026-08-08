@@ -43,7 +43,11 @@
 	syntax-theme = gruvbox-dark
 
 [merge]
-	conflictstyle = diff3
+	# zdiff3 = diff3 but with common lines at the hunk edges factored out
+	conflictstyle = zdiff3
+
+[init]
+	defaultBranch = main
 
 [diff]
 	colorMoved = default
