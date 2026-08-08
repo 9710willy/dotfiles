@@ -142,7 +142,7 @@ alias ccl='ccm -l'          # List Claude sessions
 alias cck='ccm -k'          # Kill a Claude session
 alias ccK='ccm -K'          # Kill all Claude sessions
 alias ccwork='ccm ~/work'
-alias ccdot='ccm ~/dotfiles'
+alias ccdot='ccm ~/.local/share/chezmoi'
 
 # =============================================================================
 # Helper Functions
