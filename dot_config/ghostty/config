@@ -21,8 +21,9 @@ shell-integration = zsh
 mouse-hide-while-typing = true
 copy-on-select = clipboard
 
-# Scrollback
-scrollback-limit = 50000
+# Scrollback. The unit is BYTES, not lines — 50000 was only ~600 lines.
+# 20MB is roughly 200k lines per surface, allocated as needed.
+scrollback-limit = 20000000
 
 # Quick terminal (like iTerm hotkey window)
 keybind = global:cmd+grave_accent=toggle_quick_terminal
