@@ -24,7 +24,7 @@ return {
 		},
 		keys = {
 			{
-				"z",
+				"s",
 				mode = { "n", "x", "o" },
 				function()
 					require("flash").jump()
@@ -32,7 +32,7 @@ return {
 				desc = "Flash",
 			},
 			{
-				"Z",
+				"S",
 				mode = { "n", "o", "x" },
 				function()
 					require("flash").treesitter()
@@ -118,7 +118,7 @@ return {
 							section = "Quick Tips",
 						},
 						{
-							name = "  Nav:  z=flash Z=treesitter {/}=symbols K=hover C-space=select",
+							name = "  Nav:  s=flash S=treesitter {/}=symbols K=hover C-space=select",
 							action = "",
 							section = "Quick Tips",
 						},
@@ -149,8 +149,23 @@ return {
 					starter.gen_hook.aligning("center", "center"),
 				},
 			})
-			require("mini.surround").setup({ search_method = "cover_or_nearest", respect_selection_type = true })
-			require("mini.align").setup({ mappings = { start = "", start_with_preview = "g=" } })
+			require("mini.surround").setup({
+				search_method = "cover_or_nearest",
+				respect_selection_type = true,
+				-- gz prefix: bare `s` belongs to flash.nvim jump
+				mappings = {
+					add = "gza",
+					delete = "gzd",
+					find = "gzf",
+					find_left = "gzF",
+					highlight = "gzh",
+					replace = "gzr",
+					update_n_lines = "gzn",
+				},
+			})
+			-- No preview mapping: gA is LSP code action, and align mode is
+			-- interactive anyway.
+			require("mini.align").setup({ mappings = { start = "ga", start_with_preview = "" } })
 			require("mini.ai").setup({ search_method = "cover_or_nearest" })
 			require("mini.bracketed").setup({})
 			require("mini.comment").setup({ options = { ignore_blank_line = true } })
@@ -645,7 +660,7 @@ return {
 					cr = "<leader>r<cr>",
 					interrupt = "<leader>ri<leader>",
 					exit = "<leader>rq",
-					clear = "<leader>rc",
+					clear = "<leader>rC", -- rc is refactoring.nvim debug cleanup
 				},
 			})
 		end,
@@ -741,7 +756,7 @@ return {
 			{
 				"<leader>f",
 				function()
-					require("conform").format({ async = true, lsp_fallback = true })
+					require("conform").format({ async = true, lsp_format = "fallback" })
 				end,
 				mode = "",
 				desc = "Format buffer",
@@ -762,7 +777,29 @@ return {
 				toml = { "taplo" },
 				["_"] = { "trim_whitespace" },
 			},
+			format_on_save = function(bufnr)
+				if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
+					return
+				end
+				return { timeout_ms = 1000, lsp_format = "fallback" }
+			end,
 		},
+		config = function(_, opts)
+			require("conform").setup(opts)
+			-- :FormatDisable turns autoformat off globally, :FormatDisable!
+			-- for the current buffer only, :FormatEnable turns it back on.
+			vim.api.nvim_create_user_command("FormatDisable", function(args)
+				if args.bang then
+					vim.b.disable_autoformat = true
+				else
+					vim.g.disable_autoformat = true
+				end
+			end, { desc = "Disable autoformat-on-save", bang = true })
+			vim.api.nvim_create_user_command("FormatEnable", function()
+				vim.b.disable_autoformat = false
+				vim.g.disable_autoformat = false
+			end, { desc = "Re-enable autoformat-on-save" })
+		end,
 	},
 	{
 		"folke/noice.nvim",
