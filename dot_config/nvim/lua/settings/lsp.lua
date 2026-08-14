@@ -138,7 +138,7 @@ vim.lsp.enable({
 	"lua_ls",
 	"tailwindcss",
 	"texlab",
-	"ltex",
+	"ltex_plus",
 	"vtsls",
 	"vimls",
 	"yamlls",
