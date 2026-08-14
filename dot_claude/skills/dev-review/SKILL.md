@@ -42,11 +42,11 @@ Files live in `~/.claude/skills/dev-review/references/lenses/`. Pass the absolut
 
 ## Workflow invocation
 
-The reviewer scaffold, output schemas, and aggregation rules live in `references/workflow.js` — the skill's opt-in to the `Workflow` tool. Invoke:
+The reviewer scaffold, output schemas, and aggregation rules live in `~/.claude/skills/dev-review/references/workflow.js` — the skill's opt-in to the `Workflow` tool. Pass the absolute path. Invoke:
 
 ```
 Workflow({
-  scriptPath: "/Users/willee1/.claude/skills/dev-review/references/workflow.js",
+  scriptPath: "<absolute path to ~/.claude/skills/dev-review/references/workflow.js>",
   args: {
     repoRoot: "<absolute path>",
     range: "<e.g. main...HEAD>",

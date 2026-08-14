@@ -4,16 +4,13 @@
 .zhistory
 .zshrc.local
 
-# Workstation-only: Acme work config + secrets — never sync to repo
+# Workstation-only: work config + secrets
 .zshenv
 .claude/settings.json
 .claude/CLAUDE.md
+.claude/skills/atlassian-curl/SITE.md
 .ssh/config
 
 # Generated files
 **/.DS_Store
 **/node_modules/
-
-# Neovim generated
-dotfiles/nvim/session/
-dotfiles/nvim/lazy-lock.json
