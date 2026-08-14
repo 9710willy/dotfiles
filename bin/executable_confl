@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # confl — minimal-output Confluence Cloud wrapper (token-efficient for LLM use)
-# Auth: ATLASSIAN_EMAIL + ATLASSIAN_TOKEN env vars (export from your shell profile)
+# Env: ATLASSIAN_EMAIL, ATLASSIAN_TOKEN, ATLASSIAN_SITE (export from your shell profile)
 set -euo pipefail
 
 command -v jq >/dev/null || { echo "confl: requires jq (brew install jq)" >&2; exit 1; }
 : "${ATLASSIAN_EMAIL:?not set — export your Atlassian login email in your shell profile}"
 : "${ATLASSIAN_TOKEN:?not set — create a token at https://id.atlassian.com/manage-profile/security/api-tokens and export it in your shell profile}"
 
-V2="${CONFLUENCE_BASE:-https://example.atlassian.net/wiki/api/v2}"
-V1="${CONFLUENCE_V1_BASE:-https://example.atlassian.net/wiki/rest/api}"
+: "${ATLASSIAN_SITE:?not set — export your Atlassian site subdomain (SITE in https://SITE.atlassian.net) in your shell profile}"
+V2="https://${ATLASSIAN_SITE}.atlassian.net/wiki/api/v2"
+V1="https://${ATLASSIAN_SITE}.atlassian.net/wiki/rest/api"
 AUTH="Authorization: Basic $(printf '%s:%s' "$ATLASSIAN_EMAIL" "$ATLASSIAN_TOKEN" | base64)"
 
 req() { # req METHOD URL [curl-args...] — one Retry-After-aware 429 retry

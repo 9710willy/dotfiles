@@ -3,7 +3,7 @@ name: atlassian-curl
 description: Use when interacting with Jira or Confluence — viewing issues, JQL search, creating/updating/transitioning tickets, adding comments, reading/creating Confluence pages, CQL search. Use the `jira` and `confl` wrapper scripts, not raw curl or Atlassian MCP.
 ---
 
-Use the `~/bin/jira` and `~/bin/confl` wrapper scripts (on PATH). They handle auth (`ATLASSIAN_EMAIL`/`ATLASSIAN_TOKEN` env vars exported from the shell profile), trim responses to compact text, and convert ADF↔plain text. Run `jira` or `confl` with no args for usage.
+Use the `~/bin/jira` and `~/bin/confl` wrapper scripts (on PATH). They read auth and site URLs from env vars exported in the shell profile (`ATLASSIAN_EMAIL`, `ATLASSIAN_TOKEN`, `ATLASSIAN_SITE`), trim responses to compact text, and convert ADF↔plain text. Run `jira` or `confl` with no args for usage.
 
 ## Jira
 
@@ -37,15 +37,9 @@ confl raw METHOD /path-or-URL [curl args]
 
 `create`/`update` take storage-format HTML on stdin (`<p>`, `<h2>`, `<ul>`, `<table>`, `<ac:structured-macro>` etc.). `update` replaces the whole body — fetch with `confl body` first when making partial edits.
 
-## Acme specifics
+## Site specifics
 
-| Item | Value |
-|------|-------|
-| Story Points | `customfield_10023` (NOT `customfield_10016` "Story Point Estimate" or `customfield_10028` color) |
-| Sprint | `customfield_10020` |
-| Delivery Area/Team (required for Done) | `customfield_10065` |
-
-Field IDs are site-specific — list them with `jira raw GET /field`.
+Field IDs and workflow rules are site-specific. Read `~/.claude/skills/atlassian-curl/SITE.md` for this machine's values; `jira raw GET /field` lists field IDs on a new site.
 
 ## Gotchas
 
