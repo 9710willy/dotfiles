@@ -32,6 +32,14 @@
 [core]
 	pager = delta
 	fsmonitor = true
+	# fsmonitor only pays off with untrackedCache: without it, git still walks
+	# the worktree to find untracked files on every status.
+	untrackedCache = true
+	commitGraph = true
+	# APFS hands back NFD filenames; without this, accented paths look modified.
+	precomposeUnicode = true
+	# Time Machine and Spotlight touch ctime, which git would read as a change.
+	trustctime = false
 
 [interactive]
 	diffFilter = delta --color-only
@@ -51,6 +59,13 @@
 
 [diff]
 	colorMoved = default
+	# histogram gives cleaner hunks than the default myers, which matters most
+	# when a human or a model is reading the diff to review a change.
+	algorithm = histogram
+	renames = copies
+	# a/ b/ prefixes become i/ w/ c/ so you can tell index from worktree
+	mnemonicPrefix = true
+	wsErrorHighlight = all
 
 [feature]
 	manyFiles = true
@@ -63,5 +78,38 @@
 	autoSetupRemote = true
 [fetch]
 	prune = true
+	writeCommitGraph = true
 [rerere]
 	enabled = true
+
+# --- Performance: 12-core M3 Pro, so let git use the cores it has ---
+[index]
+	version = 4
+	threads = 0
+[pack]
+	threads = 0
+[checkout]
+	# parallel checkout, a large win on branch switches in big repos
+	workers = 0
+[maintenance]
+	auto = true
+	strategy = incremental
+
+# --- Rebase and history quality of life ---
+[rebase]
+	autosquash = true
+	autostash = true
+	# keep stacked branches pointing at the right commits after a rebase
+	updateRefs = true
+[branch]
+	sort = -committerdate
+[tag]
+	sort = -version:refname
+[log]
+	date = iso
+[submodule]
+	recurse = true
+[transfer]
+	fsckobjects = true
+[help]
+	autocorrect = prompt
