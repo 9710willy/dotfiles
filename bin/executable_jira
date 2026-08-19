@@ -39,8 +39,17 @@ striphtml() {
     | awk '{$1=$1};NF'
 }
 
-adf() { # plain text -> ADF doc JSON (blank line = new paragraph)
-  jq -Rs '{type:"doc",version:1,content:[splits("\n\n+")|select(length>0)|{type:"paragraph",content:[{type:"text",text:.}]}]}' <<<"$1"
+adf() { # plain text -> ADF doc JSON (blank line=paragraph; "- " lines=bullet list; "Label:"=bold; `code`=inline code; --- =rule)
+  python3 "$(dirname "$0")/jira-adf.py" <<<"$1"
+}
+
+MAXL="${ATLASSIAN_MAX_LINES:-200}"   # 0 = unlimited
+cap() { # cap HINT — print first $MAXL lines of stdin, then say what was dropped
+  local hint="$1"
+  if [[ "$MAXL" == 0 ]]; then cat; return 0; fi
+  awk -v n="$MAXL" -v hint="$hint" '
+    NR<=n { print; next }
+    END { if (NR>n) printf "\n[truncated - showed %d of %d lines]\n[rest: %s | sed -n %d,%dp]\n", n, NR, hint, n+1, NR }'
 }
 
 cmd="${1:-help}"; shift || true
@@ -53,7 +62,7 @@ case "$cmd" in
            "summary: \(.fields.summary)",
            (.fields | del(.summary,.status,.assignee,.priority,.issuetype,.parent,.labels,.description) | to_entries[] | select(.value != null) | "\(.key): \(.value | tostring | .[0:200])"),
            "--- description ---"' <<<"$out"
-    jq -r '.renderedFields.description // ""' <<<"$out" | striphtml ;;
+    jq -r '.renderedFields.description // ""' <<<"$out" | striphtml | cap "ATLASSIAN_MAX_LINES=0 jira get $key" ;;
   search) # jira search 'JQL' [maxResults] [extra,fields] — JQL must be bounded
     jql="$1"; max="${2:-50}"; extra="${3:+,$3}"
     req GET "/search/jql" -G --data-urlencode "jql=$jql" \
@@ -65,14 +74,15 @@ case "$cmd" in
       -d "$(jq -n --arg jql "$1" '{jql:$jql}')" | jq -r '.count' ;;
   comments) # jira comments KEY [limit]
     req GET "/issue/$1/comment?orderBy=-created&maxResults=${2:-20}&expand=renderedBody" \
-      | jq -r '.comments[] | "[\(.created[0:16]) \(.author.displayName)]\n\(.renderedBody)\n<hr>"' | striphtml ;;
+      | jq -r '.comments[] | "[\(.created[0:16]) \(.author.displayName)]\n\(.renderedBody)\n<hr>"' | striphtml \
+      | cap "ATLASSIAN_MAX_LINES=0 jira comments $1" ;;
   comment) # jira comment KEY 'text'
     req POST "/issue/$1/comment" -H 'Content-Type: application/json' \
       -d "$(jq -n --argjson body "$(adf "$2")" '{body:$body}')" | jq -r '"comment \(.id) added"' ;;
-  create) # jira create PROJ Type 'summary' ['description']
+  create) # jira create PROJ Type 'summary' ['description'] ['{"extra":"fields"}' — merged in, for issue types with more required create-screen fields]
     req POST "/issue" -H 'Content-Type: application/json' \
-      -d "$(jq -n --arg p "$1" --arg t "$2" --arg s "$3" --argjson d "$(adf "${4:-}")" \
-        '{fields:{project:{key:$p},issuetype:{name:$t},summary:$s,description:$d}}')" | jq -r '.key' ;;
+      -d "$(jq -n --arg p "$1" --arg t "$2" --arg s "$3" --argjson d "$(adf "${4:-}")" --argjson x "${5:-{\}}" \
+        '{fields:(({project:{key:$p},issuetype:{name:$t},summary:$s,description:$d}) * $x)}')" | jq -r '.key' ;;
   update) # jira update KEY '{"summary":"..."}'  (raw fields JSON)
     req PUT "/issue/$1" -H 'Content-Type: application/json' \
       -d "$(jq -n --argjson f "$2" '{fields:$f}')" >/dev/null && echo "updated $1" ;;

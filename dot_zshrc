@@ -88,6 +88,20 @@ unsetopt share_history        # Don't share history between shells
 # Environment
 # =============================================================================
 export EDITOR='nvim'
+export VISUAL="$EDITOR"        # git, fc, and many CLIs read VISUAL before EDITOR
+
+# Colourised man pages through bat. Needs the plain style: bat's default adds
+# line numbers and a grid, which man's own layout then fights with.
+if command -v bat &>/dev/null; then
+  export MANPAGER="sh -c 'col -bx | bat --language=man --style=plain --paging=always'"
+  export MANROFFOPT='-c'       # without this, man's escapes reach bat as literals
+fi
+
+# GPG needs to know which terminal to prompt on. Commits are gpgsign = true, so
+# without this a signature can fail with "Inappropriate ioctl for device".
+export GPG_TTY=$TTY
+
+export HOMEBREW_NO_ENV_HINTS=1  # drop the post-install hint spam
 
 # Eza colors (gruvbox theme)
 export EZA_COLORS="di=38;5;109:ln=38;5;108:ex=38;5;142:fi=38;5;223:\

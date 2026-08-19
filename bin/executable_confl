@@ -32,6 +32,15 @@ req() { # req METHOD URL [curl-args...] — one Retry-After-aware 429 retry
   printf '%s' "$out"
 }
 
+MAXL="${ATLASSIAN_MAX_LINES:-200}"   # 0 = unlimited
+cap() { # cap HINT — print first $MAXL lines of stdin, then say what was dropped
+  local hint="$1"
+  if [[ "$MAXL" == 0 ]]; then cat; return 0; fi
+  awk -v n="$MAXL" -v hint="$hint" '
+    NR<=n { print; next }
+    END { if (NR>n) printf "\n[truncated - showed %d of %d lines]\n[rest: %s | sed -n %d,%dp]\n", n, NR, hint, n+1, NR }'
+}
+
 cmd="${1:-help}"; shift || true
 case "$cmd" in
   get) # confl get PAGEID — title/meta + body as readable text
@@ -40,8 +49,9 @@ case "$cmd" in
                "title: \(.title)", "---", .body.export_view.value' \
       | sed -e 's/<br[^>]*>/\n/g; s/<\/p>/\n/g; s/<\/li>/\n/g; s/<\/h[1-6]>/\n/g; s/<\/tr>/\n/g; s/<\/div>/\n/g' \
             -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g' \
-      | awk '{$1=$1};NF' ;;
-  body) # confl body PAGEID — raw storage-format HTML (for edits)
+      | awk '{$1=$1};NF' \
+      | cap "ATLASSIAN_MAX_LINES=0 confl get $1" ;;
+  body) # confl body PAGEID — raw storage-format HTML (for edits; never capped, a cut body corrupts update)
     req GET "$V2/pages/$1?body-format=storage" | jq -r '.body.storage.value' ;;
   search) # confl search 'CQL' [limit]
     req GET "$V1/search" -G --data-urlencode "cql=$1" --data-urlencode "limit=${2:-25}" \
