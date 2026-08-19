@@ -34,7 +34,8 @@ req() { # req METHOD PATH [curl-args...] — errors to stderr, one Retry-After-a
 }
 
 striphtml() {
-  sed -e 's/<br[^>]*>/\n/g; s/<\/p>/\n/g; s/<\/li>/\n/g; s/<\/h[1-6]>/\n/g; s/<\/tr>/\n/g; s/<\/div>/\n/g' \
+  sed -e 's/<h[1-6][^>]*>/\n'"$HMARK"'/g' \
+      -e 's/<br[^>]*>/\n/g; s/<\/p>/\n/g; s/<\/li>/\n/g; s/<\/h[1-6]>/\n/g; s/<\/tr>/\n/g; s/<\/div>/\n/g' \
       -e 's/<[^>]*>/ /g' -e 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g; s/&#39;/'"'"'/g' \
     | awk '{$1=$1};NF'
 }
@@ -43,13 +44,26 @@ adf() { # plain text -> ADF doc JSON (blank line=paragraph; "- " lines=bullet li
   python3 "$(dirname "$0")/jira-adf.py" <<<"$1"
 }
 
+HMARK=$'\001'                        # heading sentinel, injected before tags are stripped
 MAXL="${ATLASSIAN_MAX_LINES:-200}"   # 0 = unlimited
-cap() { # cap HINT — print first $MAXL lines of stdin, then say what was dropped
+cap() { # cap HINT — heading outline + first $MAXL lines; always removes the sentinel
   local hint="$1"
-  if [[ "$MAXL" == 0 ]]; then cat; return 0; fi
-  awk -v n="$MAXL" -v hint="$hint" '
-    NR<=n { print; next }
-    END { if (NR>n) printf "\n[truncated - showed %d of %d lines]\n[rest: %s | sed -n %d,%dp]\n", n, NR, hint, n+1, NR }'
+  awk -v n="$MAXL" -v hint="$hint" -v M="$HMARK" '
+    { l[NR] = $0 }
+    END {
+      cut = (n > 0 && NR > n)
+      if (cut) {
+        for (i = 1; i <= NR; i++) if (index(l[i], M) == 1) { hn[++nh] = i; ht[nh] = substr(l[i], 2) }
+        if (nh) {
+          printf "--- outline (%d lines total) ---\n", NR
+          for (j = 1; j <= nh; j++) printf "%6d  %s\n", hn[j], ht[j]
+          printf "--- body (lines 1-%d) ---\n", n
+        }
+      }
+      lim = cut ? n : NR
+      for (i = 1; i <= lim; i++) { s = l[i]; sub("^" M, "", s); print s }
+      if (cut) printf "\n[truncated - showed %d of %d lines]\n[rest: %s | sed -n %d,%dp]\n", n, NR, hint, n + 1, NR
+    }'
 }
 
 cmd="${1:-help}"; shift || true

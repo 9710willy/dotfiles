@@ -5,6 +5,21 @@ description: Use when interacting with Jira or Confluence — viewing issues, JQ
 
 Use the `~/bin/jira` and `~/bin/confl` wrapper scripts (on PATH). They read auth and site URLs from env vars exported in the shell profile (`ATLASSIAN_EMAIL`, `ATLASSIAN_TOKEN`, `ATLASSIAN_SITE`), trim responses to compact text, and convert ADF↔plain text. Run `jira` or `confl` with no args for usage.
 
+**Long output is capped at 200 lines.** `jira get` (description), `jira comments`, and `confl get` stop there. When the source has headings you first get a full outline with line numbers, so nothing is hidden — you can see every section that exists and jump straight to it:
+
+```
+--- outline (1188 lines total) ---
+     8  Email MFE Standalone Mode: Design Document
+   764  Remaining Questions
+   934  Delivery Timeline
+--- body (lines 1-200) ---
+...
+[truncated - showed 200 of 1188 lines]
+[rest: ATLASSIAN_MAX_LINES=0 confl get 11074142232 | sed -n 201,1188p]
+```
+
+Read the capped output first; fetch a section only when you need it (`... | sed -n 764,820p`). A long Confluence page is ~7,000 tokens uncapped, and everything you read stays in context for the rest of the session. `ATLASSIAN_MAX_LINES=N` changes the cap, `0` removes it. `confl body` is never capped (a cut body would corrupt `confl update`).
+
 ## Jira
 
 ```bash
@@ -43,7 +58,7 @@ Field IDs and workflow rules are site-specific. Read `~/.claude/skills/atlassian
 
 ## Gotchas
 
-- **Token efficiency:** prefer the subcommands; only use `raw` when a field/endpoint isn't covered, and pipe `raw` through a `jq` filter to keep output small.
+- **Token efficiency:** prefer the subcommands; only use `raw` when a field/endpoint isn't covered, and pipe `raw` through a `jq` filter to keep output small. `raw` is not capped. To read a big page without filling the session, read it in a subagent and keep only the summary.
 - JQL search uses `/search/jql` with `nextPageToken` cursor pagination (old `/search` returns 410; no `total` field — use `jira count`). JQL must be **bounded** (a bare `ORDER BY` is rejected).
 - Jira search is **eventually consistent** — a just-created/updated issue may not appear in search immediately; `jira get` it directly for read-after-write.
 - In JQL and payloads reference people by `accountId` (`jira user` to look up), never username/email.
