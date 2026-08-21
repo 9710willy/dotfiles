@@ -142,7 +142,15 @@ checkpoint_busy() {
 # no output - discarding a prune that had already worked.
 old_rollouts() { find "$sessions" -name "*.jsonl" -type f -mtime "+$KEEP_DAYS" 2>/dev/null | wc -l | tr -d ' '; }
 
-if pgrep -f "codex-darwin-arm64/vendor/.*/bin/codex" >/dev/null 2>&1 || pgrep -f "bin/codex resume" >/dev/null 2>&1; then
+# UPDATED 2026-08-21: codex moved from the npm install to the Homebrew CASK, so
+# the old `codex-darwin-arm64/vendor/...` pattern can never match again. Left
+# alone, this reported "codex is closed" while two sessions held the db open,
+# and every deferred vacuum below looked like an unexplained failure. The cask
+# runs the binary straight out of the Caskroom, plus a codex-code-mode-host
+# child; matching either is enough to know a writer is live.
+if pgrep -f "Caskroom/codex/.*/bin/codex" >/dev/null 2>&1 ||
+  pgrep -f "codex-darwin-arm64/vendor/.*/bin/codex" >/dev/null 2>&1 ||
+  pgrep -f "bin/codex resume" >/dev/null 2>&1; then
   echo "note: codex is running - pruning online, vacuum may be deferred"
 fi
 
@@ -275,6 +283,93 @@ if [ "$do_vacuum" = true ] && [ -f "$db" ]; then
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# thread_history_1.sqlite - age-based prune. ADDED 2026-08-21.
+#
+# WHY THIS EXISTS SEPARATELY from the --rollouts block below: that one keeps a
+# thread only if its rollout .jsonl still exists on disk. That was the right key
+# while rollouts were the system of record, but codex 0.149 stopped keeping them
+# - measured 2026-08-21, 42 rollouts (4.0G) at 00:35 became 3 (5.3M) by 09:00
+# while thread_history kept all 833 threads. So the rollout-keyed prune would now
+# delete 830 of 833 threads, and on a plain nightly run (no --rollouts) it never
+# fires at all: the db grew to 846M / 125,586 items / 635M of item_json in 16
+# days, about 40MB a day, with nothing bounding it.
+#
+# This block keys on AGE instead, runs on every prune, and is the one that keeps
+# the file flat. A thread survives if it has activity inside the window - MAX,
+# not MIN, so a thread started 3 weeks ago but used yesterday is kept - or if it
+# is pinned in the TUI.
+#
+# Same empty-list rule as the block below: an empty keep list matches every row,
+# and it is far more likely to mean "the query failed" than "you have no
+# threads", so an empty list SKIPS the delete instead of wiping the history.
+thread_db="$codex_home/thread_history_1.sqlite"
+state_db="$codex_home/state_5.sqlite"
+if [ "$do_prune" = true ] && [ -f "$thread_db" ]; then
+  cutoff_ms=$((($(date +%s) - KEEP_DAYS * 86400) * 1000))
+  keep_ids="$(mktemp -t reclaim-thread-keep)"
+  th_before="$(sqlite3 -cmd ".timeout $BUSY_MS" "file:$thread_db?mode=ro" \
+    "SELECT COUNT(DISTINCT thread_id) FROM thread_items;" 2>/dev/null || echo "?")"
+
+  # Recent threads. Read-only URI so this can never be the thing that corrupts
+  # the db if it is killed mid-read.
+  sqlite3 -cmd ".timeout $BUSY_MS" "file:$thread_db?mode=ro" \
+    "SELECT thread_id FROM thread_items GROUP BY thread_id HAVING MAX(created_at_ms) >= $cutoff_ms;" \
+    >"$keep_ids" 2>/dev/null || true
+
+  # Pinned threads, whatever their age - the user pinned them on purpose. If this
+  # read fails the prune is SKIPPED rather than run without it, because the cost
+  # of guessing wrong is deleting a thread that was deliberately kept.
+  pinned_ok=true
+  pinned="$(sqlite3 -cmd ".timeout $BUSY_MS" "file:$state_db?mode=ro" \
+    "SELECT id FROM threads WHERE is_pinned = 1;" 2>/dev/null)" || pinned_ok=false
+  if [ "$pinned_ok" = true ]; then
+    [ -z "$pinned" ] || printf '%s\n' "$pinned" >>"$keep_ids"
+    sort -u -o "$keep_ids" "$keep_ids"
+  fi
+
+  if [ "$pinned_ok" != true ]; then
+    echo "thread history: SKIPPED - could not read pinned threads from $(basename "$state_db"); refusing to prune without that list"
+  elif [ ! -s "$keep_ids" ]; then
+    echo "thread history: SKIPPED - keep list came out empty, refusing to treat that as \"delete everything\""
+  elif ! th_err="$(
+    sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" 2>&1 >/dev/null <<-SQL
+		.mode csv
+		CREATE TEMP TABLE keep(id TEXT PRIMARY KEY);
+		.import $keep_ids keep
+		BEGIN IMMEDIATE;
+		DELETE FROM thread_items                    WHERE thread_id NOT IN (SELECT id FROM keep);
+		DELETE FROM thread_turns                    WHERE thread_id NOT IN (SELECT id FROM keep);
+		DELETE FROM thread_history_projection_state WHERE thread_id NOT IN (SELECT id FROM keep);
+		COMMIT;
+	SQL
+  )"; then
+    if printf '%s' "$th_err" | grep -qi "locked\|busy"; then
+      echo "thread history: DEFERRED - $(basename "$thread_db") is locked by a running codex; the next run retries"
+      vacuum_deferred=true
+    else
+      echo "ERROR: thread history prune failed: $th_err"
+      exit 1
+    fi
+  else
+    th_after="$(sqlite3 -cmd ".timeout $BUSY_MS" "file:$thread_db?mode=ro" \
+      "SELECT COUNT(DISTINCT thread_id) FROM thread_items;" 2>/dev/null || echo "?")"
+    echo "thread history pruned: threads $th_before -> $th_after (dropped those with no activity in ${KEEP_DAYS}d, kept pinned)"
+    # Same WAL rule as everywhere else in this script: VACUUM lands the rewrite
+    # in the -wal, and only a checkpoint reporting busy=0 returns the space.
+    if [ "$do_vacuum" = true ]; then
+      sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" "VACUUM;" >/dev/null 2>&1 || true
+      if [ "$(checkpoint_busy "$thread_db")" -ne 0 ]; then
+        echo "thread history: vacuum is still in the WAL (codex holds it open) - disk has NOT gone down yet"
+        vacuum_deferred=true
+      else
+        echo "thread history after: $(size "$thread_db")"
+      fi
+    fi
+  fi
+  rm -f "$keep_ids"
+fi
+
 if [ "$prune_rollouts" = true ]; then
   echo "rollouts before: $(size "$sessions")"
   count=$(old_rollouts) || count="?"
@@ -300,9 +395,9 @@ if [ "$prune_rollouts" = true ]; then
   thread_db="$codex_home/thread_history_1.sqlite"
   if [ -f "$thread_db" ]; then
     keep_ids="$(mktemp -t reclaim-keep-ids)"
-    find "$sessions" -name "*.jsonl" -type f 2>/dev/null \
-      | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' \
-      | sort -u > "$keep_ids" || true
+    find "$sessions" -name "*.jsonl" -type f 2>/dev/null |
+      grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' |
+      sort -u >"$keep_ids" || true
     if [ ! -s "$keep_ids" ]; then
       echo "thread list: SKIPPED - no rollout ids found, refusing to treat that as \"delete everything\""
     # SQL goes in on STDIN, not as an argument. sqlite3 does not run dot-commands
@@ -311,7 +406,8 @@ if [ "$prune_rollouts" = true ]; then
     # Observed 2026-08-19: as an argument this failed every time, and because the
     # error was thrown away it was reported as "locked", blaming the wrong cause
     # exactly the way the old `2>/dev/null || echo 0` unit guard did.
-    elif ! thread_err="$(sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" 2>&1 >/dev/null <<-SQL
+    elif ! thread_err="$(
+      sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" 2>&1 >/dev/null <<-SQL
 		.mode csv
 		CREATE TEMP TABLE keep(id TEXT PRIMARY KEY);
 		.import $keep_ids keep
@@ -353,8 +449,8 @@ if [ "$prune_rollouts" = true ]; then
   echo "Not touched on purpose: state_5.sqlite, memories_1.sqlite, queue_1.sqlite,"
   echo "goals_1.sqlite. (thread_history_1.sqlite WAS pruned, to match the rollouts.)"
 else
-  echo "Not touched on purpose: thread_history_1.sqlite (the TUI's thread list),"
-  echo "state_5.sqlite, memories_1.sqlite, queue_1.sqlite, goals_1.sqlite."
+  echo "Not touched on purpose: state_5.sqlite, memories_1.sqlite, queue_1.sqlite,"
+  echo "goals_1.sqlite. (thread_history_1.sqlite is pruned by age on every run.)"
 fi
 
 [ "$vacuum_deferred" = true ] && exit 75
