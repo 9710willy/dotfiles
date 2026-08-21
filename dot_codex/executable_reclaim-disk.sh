@@ -355,19 +355,35 @@ if [ "$do_prune" = true ] && [ -f "$thread_db" ]; then
     th_after="$(sqlite3 -cmd ".timeout $BUSY_MS" "file:$thread_db?mode=ro" \
       "SELECT COUNT(DISTINCT thread_id) FROM thread_items;" 2>/dev/null || echo "?")"
     echo "thread history pruned: threads $th_before -> $th_after (dropped those with no activity in ${KEEP_DAYS}d, kept pinned)"
-    # Same WAL rule as everywhere else in this script: VACUUM lands the rewrite
-    # in the -wal, and only a checkpoint reporting busy=0 returns the space.
-    if [ "$do_vacuum" = true ]; then
-      sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" "VACUUM;" >/dev/null 2>&1 || true
-      if [ "$(checkpoint_busy "$thread_db")" -ne 0 ]; then
-        echo "thread history: vacuum is still in the WAL (codex holds it open) - disk has NOT gone down yet"
-        vacuum_deferred=true
-      else
-        echo "thread history after: $(size "$thread_db")"
-      fi
-    fi
   fi
   rm -f "$keep_ids"
+fi
+
+# The vacuum is its OWN phase, not a step inside the prune above. Nested there it
+# was reachable only when do_prune was true, so `--vacuum-only` - the command you
+# run precisely because codex was open during the prune and the space was never
+# returned - skipped thread_history entirely and reported success (2026-08-21).
+# Every other db in this script separates the two phases for the same reason.
+if [ "$do_vacuum" = true ] && [ -f "$thread_db" ]; then
+  # Same WAL rule as logs_2.sqlite: VACUUM lands the rewrite in the -wal, and only
+  # a checkpoint reporting busy=0 actually returns the space. With a live codex
+  # this makes disk usage go UP until the checkpoint lands, so a busy result is
+  # reported as a deferral, not a success.
+  th_free_mb="$(sqlite3 -cmd ".timeout $BUSY_MS" "file:$thread_db?mode=ro" \
+    "SELECT (SELECT * FROM pragma_freelist_count) * (SELECT * FROM pragma_page_size) / 1048576;" 2>/dev/null || echo "?")"
+  echo "thread history vacuum: ${th_free_mb}MB on the freelist, attempting..."
+  if sqlite3 -cmd ".timeout $BUSY_MS" "$thread_db" "VACUUM;" >/dev/null 2>&1; then
+    if [ "$(checkpoint_busy "$thread_db")" -ne 0 ]; then
+      echo "thread history: vacuum DEFERRED - the rewrite is still in the WAL, a live"
+      echo "codex reader blocked the checkpoint. Close codex and rerun --vacuum-only."
+      vacuum_deferred=true
+    else
+      echo "thread history after: $(size "$thread_db")"
+    fi
+  else
+    echo "thread history: vacuum DEFERRED - $(basename "$thread_db") is locked by a running codex."
+    vacuum_deferred=true
+  fi
 fi
 
 if [ "$prune_rollouts" = true ]; then
