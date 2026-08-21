@@ -252,6 +252,15 @@ command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"
 # direnv - auto-load project environment variables
 command -v direnv &> /dev/null && eval "$(direnv hook zsh)"
 
+# Codex -> copilot-api proxy key.
+# Read from the proxy's own 0600 config.json instead of publishing it with
+# `launchctl setenv`, which put the key in the GLOBAL launchd environment where
+# any process of this user could read it back with `launchctl getenv`. Scoped to
+# shells started by this file, which is where codex is launched from.
+if [[ -r ~/.local/share/copilot-api/config.json ]]; then
+  export COPILOT_API_KEY="$(jq -r '.auth.apiKeys[0] // empty' ~/.local/share/copilot-api/config.json 2>/dev/null)"
+fi
+
 # Machine-local config (not tracked by chezmoi)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
