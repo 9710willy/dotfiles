@@ -6,8 +6,8 @@
     <string>com.willee1.copilot-api</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/node</string>
-        <string>/opt/homebrew/bin/copilot-api</string>
+        <string>/Users/willee1/.local/share/mise/installs/node/24/bin/node</string>
+        <string>/Users/willee1/.local/opt/copilot-api/node_modules/.bin/copilot-api</string>
         <string>start</string>
     </array>
     <key>RunAtLoad</key>
@@ -22,8 +22,11 @@
     <dict>
         <key>HOST</key>
         <string>127.0.0.1</string>
+        <!-- mise's node 24 first, so any child process the proxy spawns resolves
+             the same node that runs it. Brew's node is only a prettierd /
+             yaml-language-server dependency and must not be picked up here. -->
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/bin:/bin</string>
+        <string>/Users/willee1/.local/share/mise/installs/node/24/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
     </dict>
 </dict>
 </plist>

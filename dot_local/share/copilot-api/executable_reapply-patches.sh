@@ -35,7 +35,13 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-dist="/opt/homebrew/lib/node_modules/@jeffreycao/copilot-api/dist"
+# Moved off /opt/homebrew on 2026-08-21. copilot-api used to live in the global
+# node_modules of brew's `node`, which is installed only as a DEPENDENCY of
+# prettierd and yaml-language-server - so an unrelated `brew upgrade` could
+# replace the runtime under the patched bundle without warning. It now has its
+# own prefix that brew never touches, run by mise's node 24 (the version
+# ~/.config/mise/config.toml already pins).
+dist="$HOME/.local/opt/copilot-api/node_modules/@jeffreycao/copilot-api/dist"
 service="gui/$(id -u)/com.willee1.copilot-api"
 
 # Split out of the assignment on purpose. As `diff_file="${1:-$(ls ... | head -1)}"`

@@ -22,23 +22,23 @@ service="gui/$(id -u)/com.willee1.copilot-api"
 keep=3
 
 if [ -f "$log" ]; then
-	for i in $(seq $((keep - 1)) -1 1); do
-		[ -f "$log.$i.gz" ] && mv -f "$log.$i.gz" "$log.$((i + 1)).gz"
-	done
-	cp -p "$log" "$log.1"
-	gzip -f "$log.1"
-	# Truncate in place rather than delete: the running process holds this fd,
-	# and unlinking it would leave it writing to an invisible inode.
-	: > "$log"
-	echo "$(date '+%Y-%m-%dT%H:%M:%S') rotated log, kept $keep generations"
+  for i in $(seq $((keep - 1)) -1 1); do
+    [ -f "$log.$i.gz" ] && mv -f "$log.$i.gz" "$log.$((i + 1)).gz"
+  done
+  cp -p "$log" "$log.1"
+  gzip -f "$log.1"
+  # Truncate in place rather than delete: the running process holds this fd,
+  # and unlinking it would leave it writing to an invisible inode.
+  : >"$log"
+  echo "$(date '+%Y-%m-%dT%H:%M:%S') rotated log, kept $keep generations"
 fi
 
 # Drop rotations beyond the keep count.
 for f in "$log".*.gz; do
-	[ -f "$f" ] || continue
-	n="${f##*.log.}"
-	n="${n%%.gz}"
-	[ "$n" -gt "$keep" ] 2>/dev/null && rm -f "$f"
+  [ -f "$f" ] || continue
+  n="${f##*.log.}"
+  n="${n%%.gz}"
+  [ "$n" -gt "$keep" ] 2>/dev/null && rm -f "$f"
 done
 
 # Codex disk-reclaim staleness alarm.
@@ -56,22 +56,22 @@ done
 prune_stamp="$HOME/.codex/.reclaim-last-prune"
 stale_days=2
 if [ ! -f "$prune_stamp" ]; then
-	echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: codex disk reclaim has NEVER succeeded - $prune_stamp is missing."
-	echo "  Check: launchctl list | grep codex-reclaim   and   ~/Library/Logs/codex-reclaim.log"
-	echo "  ~/.codex is currently $(du -sh "$HOME/.codex" 2>/dev/null | cut -f1 || echo '?')"
+  echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: codex disk reclaim has NEVER succeeded - $prune_stamp is missing."
+  echo "  Check: launchctl list | grep codex-reclaim   and   ~/Library/Logs/codex-reclaim.log"
+  echo "  ~/.codex is currently $(du -sh "$HOME/.codex" 2>/dev/null | cut -f1 || echo '?')"
 else
-	last_prune="$(cat "$prune_stamp" 2>/dev/null || true)"
-	last_prune_s="$(date -j -f '%Y-%m-%d' "$last_prune" +%s 2>/dev/null || echo 0)"
-	if [ "$last_prune_s" -eq 0 ]; then
-		echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: $prune_stamp is unreadable (contains: '$last_prune')"
-	else
-		prune_age_days=$(( ( $(date +%s) - last_prune_s ) / 86400 ))
-		if [ "$prune_age_days" -gt "$stale_days" ]; then
-			echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: codex disk reclaim last pruned on $last_prune ($prune_age_days days ago)."
-			echo "  Check: launchctl list | grep codex-reclaim   and   ~/Library/Logs/codex-reclaim.log"
-			echo "  ~/.codex is currently $(du -sh "$HOME/.codex" 2>/dev/null | cut -f1 || echo '?')"
-		fi
-	fi
+  last_prune="$(cat "$prune_stamp" 2>/dev/null || true)"
+  last_prune_s="$(date -j -f '%Y-%m-%d' "$last_prune" +%s 2>/dev/null || echo 0)"
+  if [ "$last_prune_s" -eq 0 ]; then
+    echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: $prune_stamp is unreadable (contains: '$last_prune')"
+  else
+    prune_age_days=$((($(date +%s) - last_prune_s) / 86400))
+    if [ "$prune_age_days" -gt "$stale_days" ]; then
+      echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: codex disk reclaim last pruned on $last_prune ($prune_age_days days ago)."
+      echo "  Check: launchctl list | grep codex-reclaim   and   ~/Library/Logs/codex-reclaim.log"
+      echo "  ~/.codex is currently $(du -sh "$HOME/.codex" 2>/dev/null | cut -f1 || echo '?')"
+    fi
+  fi
 fi
 
 # copilot-api usage-data retention.
@@ -91,19 +91,21 @@ fi
 usage_db="$HOME/.local/share/copilot-api/copilot-api.sqlite"
 USAGE_KEEP_DAYS="${USAGE_KEEP_DAYS:-180}"
 if [ -f "$usage_db" ]; then
-	usage_cutoff_ms=$(( ( $(date +%s) - USAGE_KEEP_DAYS * 86400 ) * 1000 ))
-	if usage_deleted=$(sqlite3 -cmd ".timeout 15000" "$usage_db" \
-		"DELETE FROM token_usage_events WHERE created_at_ms < $usage_cutoff_ms; SELECT changes();" 2>/dev/null); then
-		case "$usage_deleted" in
-			''|*[!0-9]*)
-				echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: unexpected sqlite3 output '$usage_deleted' - not retrying" ;;
-			0) : ;;
-			*)
-				echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: deleted $usage_deleted event(s) older than ${USAGE_KEEP_DAYS}d" ;;
-		esac
-	else
-		echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: skipped, db busy - retrying tomorrow"
-	fi
+  usage_cutoff_ms=$((($(date +%s) - USAGE_KEEP_DAYS * 86400) * 1000))
+  if usage_deleted=$(sqlite3 -cmd ".timeout 15000" "$usage_db" \
+    "DELETE FROM token_usage_events WHERE created_at_ms < $usage_cutoff_ms; SELECT changes();" 2>/dev/null); then
+    case "$usage_deleted" in
+      '' | *[!0-9]*)
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: unexpected sqlite3 output '$usage_deleted' - not retrying"
+        ;;
+      0) : ;;
+      *)
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: deleted $usage_deleted event(s) older than ${USAGE_KEEP_DAYS}d"
+        ;;
+    esac
+  else
+    echo "$(date '+%Y-%m-%dT%H:%M:%S') usage retention: skipped, db busy - retrying tomorrow"
+  fi
 fi
 
 # Duplicate-codex sweep.
@@ -120,27 +122,34 @@ fi
 #
 # Safety: the sweep only runs when the CANONICAL Homebrew install is present, so
 # it can never remove the last remaining copy.
-canonical_codex="/opt/homebrew/lib/node_modules/@openai/codex"
-if [ -d "$canonical_codex" ]; then
-	while IFS= read -r dup; do
-		[ -n "$dup" ] || continue
-		# .../node/<ver>/lib/node_modules/@openai/codex -> .../node/<ver>
-		node_root="${dup%/lib/node_modules/@openai/codex}"
-		echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: duplicate codex install at $dup"
-		echo "  It shadows $canonical_codex wherever that node version is active. Removing."
-		if [ -x "$node_root/bin/npm" ]; then
-			if "$node_root/bin/npm" uninstall -g @openai/codex >/dev/null 2>&1; then
-				echo "  removed via $node_root/bin/npm"
-			else
-				echo "  ERROR: uninstall failed - remove $dup by hand"
-			fi
-		elif rm -rf "$dup"; then
-			echo "  removed the directory (no npm at $node_root/bin/npm)"
-		else
-			echo "  ERROR: could not remove $dup"
-		fi
-	done < <(find "$HOME/.local/share/mise/installs/node" -maxdepth 5 -type d \
-		-path "*/node_modules/@openai/codex" 2>/dev/null)
+#
+# UPDATED 2026-08-21: codex moved from a global npm install to the Homebrew CASK
+# (`brew install --cask codex`), so the canonical copy is a binary on PATH, not a
+# node_modules directory. Left as the old npm path this guard could never be
+# true again and the sweep below would silently never run - the exact failure it
+# exists to prevent. The npm copy is gone; any node_modules hit is now a
+# duplicate by definition.
+canonical_codex="/opt/homebrew/bin/codex"
+if [ -x "$canonical_codex" ]; then
+  while IFS= read -r dup; do
+    [ -n "$dup" ] || continue
+    # .../node/<ver>/lib/node_modules/@openai/codex -> .../node/<ver>
+    node_root="${dup%/lib/node_modules/@openai/codex}"
+    echo "$(date '+%Y-%m-%dT%H:%M:%S') WARNING: duplicate codex install at $dup"
+    echo "  It shadows $canonical_codex wherever that node version is active. Removing."
+    if [ -x "$node_root/bin/npm" ]; then
+      if "$node_root/bin/npm" uninstall -g @openai/codex >/dev/null 2>&1; then
+        echo "  removed via $node_root/bin/npm"
+      else
+        echo "  ERROR: uninstall failed - remove $dup by hand"
+      fi
+    elif rm -rf "$dup"; then
+      echo "  removed the directory (no npm at $node_root/bin/npm)"
+    else
+      echo "  ERROR: could not remove $dup"
+    fi
+  done < <(find "$HOME/.local/share/mise/installs/node" -maxdepth 5 -type d \
+    -path "*/node_modules/@openai/codex" 2>/dev/null)
 fi
 
 # If an npm upgrade replaced the server bundle, the LOCAL PATCH hunks are gone
@@ -148,15 +157,15 @@ fi
 # health-checks on success, so the plain kickstart is skipped in that case. If
 # reapply fails, restart anyway - running unpatched beats not running - and
 # leave a loud line so the failure is visible in this log.
-dist="/opt/homebrew/lib/node_modules/@jeffreycao/copilot-api/dist"
+dist="$HOME/.local/opt/copilot-api/node_modules/@jeffreycao/copilot-api/dist"
 bundle="$(ls "$dist"/server-*.js 2>/dev/null | grep -v '\.map$' | head -1 || true)"
 if [ -n "$bundle" ] && ! grep -q "LOCAL PATCH" "$bundle"; then
-	echo "$(date '+%Y-%m-%dT%H:%M:%S') server bundle is UNPATCHED ($bundle) - running reapply-patches.sh"
-	if "$HOME/.local/share/copilot-api/reapply-patches.sh"; then
-		echo "$(date '+%Y-%m-%dT%H:%M:%S') local patches reapplied and service restarted"
-		exit 0
-	fi
-	echo "$(date '+%Y-%m-%dT%H:%M:%S') ERROR: reapply-patches.sh FAILED - service is running UNPATCHED; port the patches by hand (see reapply-patches.sh header)"
+  echo "$(date '+%Y-%m-%dT%H:%M:%S') server bundle is UNPATCHED ($bundle) - running reapply-patches.sh"
+  if "$HOME/.local/share/copilot-api/reapply-patches.sh"; then
+    echo "$(date '+%Y-%m-%dT%H:%M:%S') local patches reapplied and service restarted"
+    exit 0
+  fi
+  echo "$(date '+%Y-%m-%dT%H:%M:%S') ERROR: reapply-patches.sh FAILED - service is running UNPATCHED; port the patches by hand (see reapply-patches.sh header)"
 fi
 
 launchctl kickstart -k "$service"
