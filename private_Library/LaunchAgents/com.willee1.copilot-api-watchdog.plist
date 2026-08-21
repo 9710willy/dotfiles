@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.willee1.copilot-api-watchdog</string>
+    <!-- Every 10 minutes: scan new copilot-api.log bytes for the wedge
+         signatures and kickstart the service when they repeat; a >25min gap
+         between runs means the Mac slept, which restarts preemptively (sleep
+         kills the upstream sockets). See watchdog.sh header.
+
+         StartCalendarInterval, not StartInterval: observed 2026-08-14 that
+         StartInterval ticks simply did not fire in this gui domain (runs
+         stayed at 3 across 15+ awake minutes and a wake). Calendar entries
+         fire at wall-clock minutes and a firing missed during sleep runs
+         once at wake - which is exactly the wake-detection path.
+         Minutes are offset to :01 etc so the 04:00 log truncation from
+         daily-maintenance.sh completes before the next scan. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/willee1/.local/share/copilot-api/watchdog.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Minute</key><integer>1</integer></dict>
+        <dict><key>Minute</key><integer>11</integer></dict>
+        <dict><key>Minute</key><integer>21</integer></dict>
+        <dict><key>Minute</key><integer>31</integer></dict>
+        <dict><key>Minute</key><integer>41</integer></dict>
+        <dict><key>Minute</key><integer>51</integer></dict>
+    </array>
+    <!-- RunAtLoad is safe: the first run only records the current log size. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/willee1/Library/Logs/copilot-api-watchdog.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/willee1/Library/Logs/copilot-api-watchdog.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>

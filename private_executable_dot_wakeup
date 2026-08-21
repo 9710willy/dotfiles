@@ -1,0 +1,20 @@
+#!/bin/bash
+# Run by sleepwatcher (brew services) on every wake. Sleep kills the Copilot
+# upstream sockets and wedges copilot-api's connection pool (observed twice
+# 2026-08-14), so restart the service immediately instead of waiting for the
+# watchdog's next 10-minute tick.
+#
+# The restart goes through ensure-up.sh: a bare kickstart -k here once killed
+# the proxy and launchd never spawned the replacement (and the fresh process
+# can die on "fetch failed" before Wi-Fi is back) - ensure-up retries and
+# verifies the port. Then sync the watchdog state file so its wake-gap path
+# does not restart a second time: offset -> current log EOF, epoch -> now.
+log="$HOME/Library/Logs/copilot-api.log"
+state="$HOME/.local/share/copilot-api/.watchdog-offset"
+wlog="$HOME/Library/Logs/copilot-api-watchdog.log"
+
+echo "$(date '+%Y-%m-%dT%H:%M:%S') wake: restarting copilot-api via ensure-up" >> "$wlog"
+"$HOME/.local/share/copilot-api/ensure-up.sh" >> "$wlog" 2>&1
+
+size=$(/usr/bin/stat -f%z "$log" 2>/dev/null || echo 0)
+printf '%s\n%s\n' "$size" "$(date +%s)" > "$state"

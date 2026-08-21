@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.willee1.codex-reclaim</string>
+    <!-- Hourly attempt at :35. REWRITTEN 2026-08-19 with reclaim-disk.sh and
+         reclaim-scheduler.sh: the old scripts refused to run at all while any
+         codex was alive, so across the daily 04:30 slot AND the hourly one that
+         replaced it, reclaim succeeded exactly zero times and ~/.codex reached
+         9.7GB. Pruning now works with codex open; only VACUUM needs the lock.
+         Two stamps, so a deferred vacuum cannot block the daily prune:
+           .reclaim-last-prune    expected every day
+           .reclaim-last-vacuum   opportunistic, exit 75 = deferred, not logged
+         Rollouts are still never deleted (no - -rollouts flag on purpose).
+
+         StartCalendarInterval, not StartInterval: observed 2026-08-14 that
+         StartInterval ticks never fired in this gui domain (0 runs in 2h for
+         this job, same for the watchdog until it moved to calendar entries).
+         :35 avoids the watchdog minutes and the 04:00 maintenance window. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/willee1/.codex/reclaim-scheduler.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Minute</key><integer>35</integer></dict>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+    <!-- This job rewrites a multi-GB SQLite file that two live codex processes
+         are reading at that moment. Without these it runs in launchd's default
+         (interactive) band and competes with the foreground sessions for the
+         same device, stalling the TUI at a time nobody chose. Background +
+         LowPriorityIO is the correct band for maintenance the script itself
+         declares deferrable. Neither key changes when the job fires. -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/willee1/Library/Logs/codex-reclaim.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/willee1/Library/Logs/codex-reclaim.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>

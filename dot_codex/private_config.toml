@@ -1,0 +1,151 @@
+model = "gpt-5.6-sol"
+model_provider = "copilot"
+model_reasoning_effort = "max"
+model_reasoning_summary = "auto"
+# CORRECTED 2026-08-15. The old comment here claimed this line holds the window
+# down from the proxy's advertised 1.05M. It does not - it is a no-op. Codex
+# never sees 1.05M: `codex debug models` reports context_window = 272000 for
+# gpt-5.6-sol, terra, and luna, so this line sets the value to exactly the
+# catalog default. Keeping it is harmless; it is kept only so the number is
+# visible next to the auto-compact limit below.
+#
+# What actually governs the window is effective_context_window_percent = 95:
+#   272000 * 0.95 = 258400  <- the real ceiling
+# Verified: 10,213 token_count records on 2026-08-15 all report 258400.
+# So the auto-compact limit below leaves 258400 - 244800 = 13,600 tokens of
+# headroom (94.7%). That is already about as late as it can safely fire.
+#
+# Do NOT add model_auto_compact_token_limit_scope = "body_after_prefix" without
+# also lowering the limit: that scope measures the budget after the ~16,400-token
+# static prefix, so 244800 + 16400 = 261200 would exceed the 258400 ceiling.
+model_context_window = 272000
+model_auto_compact_token_limit = 244800
+approvals_reviewer = "auto_review"
+# Added 2026-08-15: never let the model that wrote the code review it. Terra is
+# served by this proxy (codex debug models lists sol/terra/luna/5.5/5.4/5.4-mini/
+# 5.2/codex-auto-review), so /review has a real second opinion instead of the
+# author grading its own homework.
+review_model = "gpt-5.6-terra"
+# service_tier removed 2026-08-13: it never reached the backend. The proxy sets
+# payload.service_tier = undefined before every upstream POST (and deletes it on
+# the websocket path), so the line only looked active.
+# Codex 0.147 reads web search as a top-level setting, NOT under [tools]
+# ([tools].web_search is parsed and discarded). Values: "live", "indexed",
+# "cached", "disabled".
+#
+# Unset does not mean off - it defaults to "cached", which is worse here: codex
+# still offers the tool but sends external_web_access=false, and copilot-api
+# accepts live retrieval only (supportsLiveAccess whitelists undefined/true/
+# "live"), so it returns a warning with zero results and the model then invents
+# an explanation for why search failed. "live" is the only working value.
+# Requires name = "OpenAI" on the provider below: the standalone web/run
+# extension gates on that literal string.
+web_search = "live"
+
+# Ported from the Claude Code setup on 2026-08-19. Codex passes a JSON
+# notification payload as the final argument.
+notify = ["/Users/willee1/.codex/notify.sh"]
+
+[model_providers.copilot]
+# name MUST be "OpenAI" — codex only handles encrypted reasoning
+# content correctly for OpenAI-named providers (issue #339).
+name = "OpenAI"
+base_url = "http://127.0.0.1:4141"
+env_key = "COPILOT_API_KEY"
+requires_openai_auth = true
+supports_websockets = false
+wire_api = "responses"
+request_max_retries = 3
+# Raised 1 -> 3 on 2026-08-13: upstream copilot-api raised its own recommended
+# value in 2.1.6 (commit a5e130c). Matters more now that headersTimeoutMs is
+# 300s, so a transient mid-stream drop is worth retrying rather than failing.
+stream_max_retries = 3
+stream_idle_timeout_ms = 300000
+
+[features]
+# Keep this ON. Turning it off does NOT fall back to local compaction: codex
+# then posts the older remote compact task to /responses/compact, which this
+# proxy does not implement, so every compaction 404s and codex reports
+# "Error running remote compact task" (verified 2026-08-13).
+#
+# The cost of leaving it on is that provider-encrypted summaries get pinned into
+# later requests (one wedged payload held 12 compaction items carrying 11400
+# replacement_history entries) and Copilot cannot decrypt them past its ~11h key
+# window. The proxy's LOCAL PATCH recovery ladder handles that case.
+remote_compaction_v2 = true
+# Off by choice. This is automatic cross-session memory: a local writing agent
+# mines past rollouts and injects extracted facts into new sessions. Not wanted.
+memories = false
+# Added 2026-08-15. The proxy README says to disable apps for models that lack
+# tool_search, or every prompt carries extra tool tokens for a capability that
+# cannot be used. Verified locally: `codex features list` reports
+# tool_search = removed/false while apps was stable/true. Pure prefix bloat on
+# every request, and prefix bloat is also cache-prefix bloat.
+apps = false
+# Added 2026-08-15. WHY: the [agents] defaults below were being silently ignored
+# under v1 fan-out. Measured from state_5.sqlite the same day they were added:
+# 64 subagent threads on gpt-5.6-sol at effort `ultra`, 0 on terra, and `ultra`
+# is not a value set anywhere in this file. Subagents were 419 sessions /
+# 41,954 requests / $3,442 over 7 days = 68.9% of all spend, and terra prices at
+# exactly 0.40x sol on every token class (per 1M: input 2.00 vs 5.00, output
+# 12.00 vs 30.00, cache read 0.20 vs 0.50, cache write 2.50 vs 6.25). Routing
+# the fan-out to terra is worth ~$295/day - roughly 4x every prompt-cache fix
+# combined.
+#
+# CAUTION: this flag also changes tool registry, token/rollout budgets, MCP tool
+# naming, and permission plumbing - not only the subagent model. If anything
+# destabilises, delete this one line and restart.
+#
+# VERIFY it took effect (must show terra, effort high, no more sol/ultra):
+#   sqlite3 "file:$HOME/.codex/state_5.sqlite?mode=ro" \
+#     "select date(created_at_ms/1000,'unixepoch'), thread_source, model, \
+#      reasoning_effort, count(*) from threads where thread_source='subagent' \
+#      group by 1,2,3,4 order by 1 desc;"
+multi_agent_v2 = true
+
+[agents]
+# Added 2026-08-15. `codex doctor` reports 563 rollouts, of which 540 are
+# subagents (thread_spawn=390, other=150) against 17 exec + 6 cli. Every one of
+# those was running sol at max effort. Route the fan-out to terra and keep sol
+# for the main thread — the split this repo's own CLAUDE.md asks for.
+# UPDATE 2026-08-15: v1 did NOT honour these - confirmed, 0 terra threads ever
+# and effort came out `ultra`. That is why multi_agent_v2 = true is now set in
+# [features] above. Re-check the state_5.sqlite query in that comment after the
+# next fan-out before trusting these values.
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "high"
+
+[analytics]
+enabled = false
+
+[projects."/Users/willee1/work/web-app"]
+trust_level = "trusted"
+
+[projects."/Users/willee1/work"]
+trust_level = "trusted"
+
+[projects."/Users/willee1/work/project-b"]
+trust_level = "trusted"
+
+[projects."/Users/willee1/work/frontend/editors-app"]
+trust_level = "trusted"
+
+[projects."/Users/willee1"]
+trust_level = "trusted"
+
+[projects."/Users/willee1/work/frontend/input-composer"]
+trust_level = "trusted"
+
+[tui]
+# Closest built-in match to the Claude footer: model, project, Git state,
+# context pressure, and estimated cost. Codex does not expose
+# Claude's per-turn added/removed line counters to its footer.
+status_line = ["model-with-reasoning", "project-name", "git-branch", "context-remaining", "estimated-thread-cost"]
+# Keep the footer colored even though this shell exports NO_COLOR.
+status_line_use_colors = true
+vim_mode_default = false
+notifications = ["agent-turn-complete", "approval-requested"]
+notification_method = "bel"
+
+[tui.model_availability_nux]
+"gpt-5.6-sol" = 4

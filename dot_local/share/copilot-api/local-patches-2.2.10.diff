@@ -1,0 +1,399 @@
+--- /Users/willee1/.local/share/copilot-api/server-2.2.7.pristine	1985-10-26 04:15:00
++++ /opt/homebrew/lib/node_modules/@jeffreycao/copilot-api/dist/server-DT2XCiFm.js	2026-08-19 08:43:39
+@@ -1952,8 +1952,331 @@
+ };
+ //#endregion
+ //#region src/services/copilot/create-responses.ts
++// LOCAL PATCHES, ported to 2.1.6 on 2026-08-13. Numbering kept from the 2.1.1
++// series so the notes and the reapply script stay comparable.
++//
++// RETIRED on this version:
++//   (1) empty tool descriptions - upstream now does this itself in
++//       fillEmptyNamespaceToolDescriptions (search this file), which covers the
++//       `type: "namespace"` tools Codex actually sends. Do not re-add.
++// REWRITTEN on this version (2026-08-13, see the ladder further down):
++//   (3) reactive scrub-and-retry ladder and (5) compaction-item drop. The
++//       previous version escalated on HTTP status alone without reading the
++//       error body, so ANY upstream 400 cost four full uploads of a 400KB-2MB
++//       payload with no backoff - measured 1432 escalations in 40456 requests -
++//       and stage (5) returned 0 on precisely the single-compaction payload it
++//       was written for, so the ladder could not make progress anyway. The
++//       rewrite reads the upstream error body first (RECOVERABLE_400) and
++//       never retries a bare HTTP 400; rejected compaction items are replaced
++//       in place with a visible note instead of spliced.
++//
++// (2)+(4): the Copilot backend cannot decrypt encrypted_content blobs older
++// than ~11h (key rotation) and 400s the whole request. Codex pins subagent
++// payloads across compactions, so long sessions accumulate stale blobs and
++// wedge permanently. Two shapes carry a blob, and the great majority live
++// nested under a compaction item's replacement_history (measured on one wedged
++// thread: 925 reachable via content/input alone vs 14016 + 7974 nested), so the
++// walk must descend every value, not a list of known keys.
++// Window reduced 11h -> 10h on 2026-08-15 as the counterpart to the
++// hour-quantized clock in isStaleFernet below. Flooring the clock can only
++// DELAY a scrub, never advance it, by at most one quantum - so 10h window +
++// 1h quantum still never lets effective age exceed the backend's ~11h limit.
++const STALE_ENCRYPTED_CONTENT_MS = 10 * 60 * 60 * 1e3;
++// Quantum for the staleness clock. See isStaleFernet.
++const STALE_CLOCK_QUANTUM_MS = 60 * 60 * 1e3;
++const ENCRYPTED_PART_STALE_TEXT = "[stale encrypted payload removed: backend cannot decrypt content minted more than ~11h ago]";
++// Fernet tokens are 0x80 then an 8-byte big-endian epoch-seconds mint time.
++// One version byte is a weak signal - about 1 in 256 unrelated blobs start with
++// 0x80 - so bound the decoded time as well and treat anything implausible as
++// "age unknown" rather than inventing a timestamp for it.
++const FERNET_EPOCH_FLOOR_S = 1400000000;
++const fernetMintedMs = (value) => {
++	if (typeof value !== "string") return null;
++	// 12 base64 characters decode to the 9 bytes needed; the rest of a
++	// multi-KB blob does not have to be decoded to read its mint time.
++	const raw = Buffer.from(value.slice(0, 12), "base64");
++	if (raw.length < 9 || raw[0] !== 128) return null;
++	const seconds = Number(raw.readBigUInt64BE(1));
++	if (!Number.isSafeInteger(seconds) || seconds < FERNET_EPOCH_FLOOR_S || seconds > Date.now() / 1e3 + 86400) return null;
++	return seconds * 1e3;
++};
++const isStaleFernet = (value) => {
++	const mintedMs = fernetMintedMs(value);
++	if (mintedMs === null) return false;
++	// Quantize the clock to the hour. Comparing against a raw Date.now() made the
++	// stale set grow continuously, so the replacement text moved earlier in the
++	// prefix on every request - and even between round trips inside a single
++	// agentic turn (observed: 168 -> 169 -> 170 replacements under one req id).
++	// Every shift invalidated the prompt cache for the whole payload. Measured
++	// 2026-08-15: the only two sessions where this fires ran at 31.2% and 31.8%
++	// cache hit rate, against 96.5% across the other 14402 gpt-5.6 requests that
++	// day. Flooring moves the boundary at most once per hour, so a long session
++	// pays one prefix break per hour instead of one per request.
++	const quantizedNow = Math.floor(Date.now() / STALE_CLOCK_QUANTUM_MS) * STALE_CLOCK_QUANTUM_MS;
++	return quantizedNow - mintedMs > STALE_ENCRYPTED_CONTENT_MS;
++};
++const isEncryptedPart = (part) => Boolean(part) && typeof part === "object" && part.type === "encrypted_content" && typeof part.encrypted_content === "string";
++// Only `reasoning` items tolerate losing the field: verified 200 with it
++// deleted. A `compaction` item requires it ("Missing required parameter:
++// input[N].encrypted_content"), so those are left alone even when stale.
++const canDropEncryptedField = (item) => item.type === "reasoning";
++// Depth-first walk over every array element and object value. onPart returns a
++// replacement for an encrypted content part, or null to keep it; onField clears
++// item.encrypted_content and returns true when it did.
++const walkEncryptedContent = (node, onPart, onField) => {
++	if (!node || typeof node !== "object") return 0;
++	let n = 0;
++	if (Array.isArray(node)) {
++		for (let i = 0; i < node.length; i++) {
++			const item = node[i];
++			if (isEncryptedPart(item)) {
++				const replacement = onPart(item);
++				if (replacement) {
++					node[i] = replacement;
++					n++;
++				}
++				continue;
++			}
++			n += walkEncryptedContent(item, onPart, onField);
++		}
++		return n;
++	}
++	if (typeof node.encrypted_content === "string" && node.type !== "encrypted_content" && onField(node)) n++;
++	for (const key of Object.keys(node)) {
++		if (key === "encrypted_content") continue;
++		n += walkEncryptedContent(node[key], onPart, onField);
++	}
++	return n;
++};
++const scrubStaleEncryptedContent = (payload) => walkEncryptedContent(payload, (part) => isStaleFernet(part.encrypted_content) ? {
++	type: "input_text",
++	text: ENCRYPTED_PART_STALE_TEXT
++} : null, (item) => {
++	if (!canDropEncryptedField(item) || !isStaleFernet(item.encrypted_content)) return false;
++	// Assigning undefined keeps the object's hidden class; JSON.stringify omits it.
++	item.encrypted_content = void 0;
++	return true;
++});
++// (6): Copilot rejects any request whose text contains the harmony marker
++// `<|channel|>` followed by the word "analysis", with a bare "Request blocked."
++// naming no field. It is a guard against analysis-channel injection. Measured:
++// `<|channel|>final` and `<|channel|>foo` pass; `<|channel|>analysis`,
++// `<|channel|> analysis`, `<|channel|>Analysis` and `<|channel|>analysis_foo`
++// are blocked; `analysi` and `xanalysis` pass. The filter ignores ALL
++// whitespace while matching - the literal, single-spaced, triple-spaced (what
++// `od -An -c` emits) and newline-separated forms are all blocked - so the
++// pattern below allows whitespace between every character. A zero-width space
++// does not evade it either. The marker is replaced by a plain-language
++// placeholder rather than disguised, so the injection pattern is genuinely
++// absent from the forwarded request instead of hidden from the filter.
++const spacedLiteralPattern = (literal) => literal.split("").map((ch) => ch.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")).join("\\s*");
++const BLOCKED_ANALYSIS_CHANNEL_MARKER = new RegExp(`${spacedLiteralPattern("<|channel|>")}\\s*${spacedLiteralPattern("analysis")}`, "gi");
++const ANALYSIS_CHANNEL_PLACEHOLDER = "[harmony analysis marker removed]";
++const neutralizeAnalysisChannelMarkers = (payload) => {
++	let n = 0;
++	const rewrite = (value) => {
++		if (!value.includes("<")) return value;
++		return value.replace(BLOCKED_ANALYSIS_CHANNEL_MARKER, () => {
++			n++;
++			return ANALYSIS_CHANNEL_PLACEHOLDER;
++		});
++	};
++	const visit = (node) => {
++		if (!node || typeof node !== "object") return;
++		if (Array.isArray(node)) {
++			for (let i = 0; i < node.length; i++) {
++				const item = node[i];
++				if (typeof item === "string") node[i] = rewrite(item);
++				else visit(item);
++			}
++			return;
++		}
++		for (const key of Object.keys(node)) {
++			if (key === "encrypted_content" || key === "signature") continue;
++			const value = node[key];
++			if (typeof value === "string") node[key] = rewrite(value);
++			else visit(value);
++		}
++	};
++	visit(payload);
++	return n;
++};
++// LOCAL DIAGNOSTIC: on an upstream 400, report where blob-shaped strings are so
++// the next wedge can be diagnosed without replaying traffic. Logs JSON paths and
++// item types only - never blob contents. The dedup key deliberately excludes the
++// per-blob prefix/suffix: keying on those made every blob unique, which produced
++// a measured 2.16MB single log line on a 23138-blob payload.
++const describeRemainingBlobs = (payload, limit = 20) => {
++	const found = new Map();
++	const visit = (node, path, ownerType) => {
++		if (!node || typeof node !== "object") return;
++		if (Array.isArray(node)) {
++			for (const item of node) visit(item, `${path}[]`, ownerType);
++			return;
++		}
++		const type = typeof node.type === "string" ? node.type : ownerType;
++		for (const [key, value] of Object.entries(node)) {
++			if (typeof value === "string" && value.length > 80 && /^[A-Za-z0-9_+/=-]+$/.test(value)) {
++				const mintedMs = fernetMintedMs(value);
++				const age = mintedMs === null ? "age-unknown" : `${Math.round((Date.now() - mintedMs) / 36e5)}h`;
++				const signature = `${path}/${key} (item=${type}, ${age})`;
++				found.set(signature, (found.get(signature) ?? 0) + 1);
++				continue;
++			}
++			visit(value, `${path}/${key}`, type);
++		}
++	};
++	visit(payload, "", void 0);
++	if (found.size === 0) return "no blob-shaped strings left in the request";
++	const entries = [...found.entries()].sort((a, b) => b[1] - a[1]);
++	const shown = entries.slice(0, limit).map(([signature, count]) => `${count}x ${signature}`);
++	if (entries.length > limit) shown.push(`... and ${entries.length - limit} more distinct paths`);
++	return shown.join("\n    ");
++};
++// (3)+(5), rewritten 2026-08-13 after review. The age rule cannot catch
++// everything - the backend also invalidates young blobs when its keys rotate
++// discontinuously (observed: a 4.7h-old blob rejected) - so recovery still has
++// to be reactive. What the previous version got wrong:
++//
++//   * It escalated on bare HTTP 400. Any 400 (context length, tool schema, the
++//     content filter) therefore cost four full uploads of a 400KB-2MB payload
++//     with no backoff: measured 1432 escalations across 40456 requests, against
++//     an account that was rate-limited and then flagged the same day. Now the
++//     upstream error body is read once and must actually name an encrypted
++//     content failure before anything is scrubbed or retried.
++//   * Its last stage returned 0 on exactly the payload its comment documented
++//     (`input: [{type:"compaction", encrypted_content}]`) because the guard
++//     bailed when every input item was a compaction, so the ladder retried
++//     forever without ever removing the rejected blob. It also spliced at every
++//     depth while counting only what it found at the top, and skipped the guard
++//     entirely when `input` was not an array. Now a rejected compaction item is
++//     REPLACED in place, at the top level only, by a visible note: progress is
++//     guaranteed, input can never be emptied, and the loss is in-band where the
++//     model and the user can both see it instead of only in a log line.
++const ENCRYPTED_PART_SCRUB_TEXT = "[encrypted payload removed: backend could no longer decrypt it]";
++const DROPPED_COMPACTION_TEXT = "[compacted history dropped: the backend rejected its encrypted payload, so the summary of earlier turns is missing from this request]";
++// Only these upstream messages are recoverable by scrubbing. Matching is on the
++// failure verb, not on the words "encrypted content": deliberately excluded are
++// "Request blocked." (the content filter, which patch (6) handles before the
++// request is sent and which scrubbing cannot fix) and "Missing required
++// parameter: 'input[N].encrypted_content'" (caused BY a scrub removing a field
++// a compaction item requires - retrying on that is the ladder chasing its own
++// tail). Observed recoverable forms: "could not be verified", "could not be
++// decrypted or parsed", and issue #339's "could not be decrypted or decoded".
++const RECOVERABLE_400 = /could not be (decrypted|verified|decoded|parsed)/i;
++const scrubAllEncryptedParts = (payload) => walkEncryptedContent(payload, () => ({
++	type: "input_text",
++	text: ENCRYPTED_PART_SCRUB_TEXT
++}), () => false);
++const scrubAllEncryptedFields = (payload) => walkEncryptedContent(payload, () => null, (item) => {
++	if (!canDropEncryptedField(item)) return false;
++	item.encrypted_content = void 0;
++	return true;
++});
++// Top-level `input` only - that is where the upstream error points
++// ("input[N].encrypted_content"), and splicing nested replacement_history
++// entries removed structure the backend still required.
++const replaceUnusableCompactionItems = (payload) => {
++	if (!Array.isArray(payload.input)) return 0;
++	let n = 0;
++	for (let i = 0; i < payload.input.length; i++) {
++		const item = payload.input[i];
++		if (!item || typeof item !== "object" || item.type !== "compaction" || typeof item.encrypted_content !== "string") continue;
++		payload.input[i] = {
++			type: "message",
++			role: "user",
++			content: [{
++				type: "input_text",
++				text: DROPPED_COMPACTION_TEXT
++			}]
++		};
++		n++;
++	}
++	return n;
++};
++const RECOVERY_STAGES = [{
++	label: "encrypted content part(s) scrubbed",
++	scrub: scrubAllEncryptedParts
++}, {
++	label: "encrypted reasoning payload(s) dropped",
++	scrub: scrubAllEncryptedFields
++}, {
++	label: "unusable compaction item(s) replaced with a visible note - summarised history is missing from this request",
++	scrub: replaceUnusableCompactionItems
++}];
++// Remember how far a session had to escalate and apply those stages up front on
++// its later turns. Without this a wedged session re-pays the whole ladder every
++// single turn, which is the sustained-load state that produced the flood rather
++// than a transient spike. Bounded and TTL'd so it cannot grow unbounded.
++const RECOVERY_MEMORY_TTL_MS = 60 * 60 * 1e3;
++const RECOVERY_MEMORY_MAX_SESSIONS = 64;
++const recoveryMemory = new Map();
++const rememberedRecoveryStages = (sessionId) => {
++	if (!sessionId) return 0;
++	const entry = recoveryMemory.get(sessionId);
++	if (!entry) return 0;
++	if (entry.expiresAt <= Date.now()) {
++		recoveryMemory.delete(sessionId);
++		return 0;
++	}
++	return entry.stages;
++};
++const rememberRecoveryStages = (sessionId, stages) => {
++	if (!sessionId || stages <= 0) return;
++	for (const [key, entry] of recoveryMemory) if (entry.expiresAt <= Date.now()) recoveryMemory.delete(key);
++	while (recoveryMemory.size >= RECOVERY_MEMORY_MAX_SESSIONS) recoveryMemory.delete(recoveryMemory.keys().next().value);
++	const previous = recoveryMemory.get(sessionId);
++	recoveryMemory.set(sessionId, {
++		stages: Math.max(stages, previous ? previous.stages : 0),
++		expiresAt: Date.now() + RECOVERY_MEMORY_TTL_MS
++	});
++};
++// Read the body from a clone so the original stays unread for forwardError,
++// which is the only place it is surfaced to the client.
++const readUpstreamMessage = async (err) => {
++	if (!err || !err.response) return "";
++	try {
++		return (await err.response.clone().text()).slice(0, 500);
++	} catch {
++		return "";
++	}
++};
++// An error we are discarding still owns an unread body, and with it a socket.
++const releaseErrorBody = (err) => {
++	try {
++		err?.response?.body?.cancel?.().catch(() => {});
++	} catch {}
++};
++const isUpstream400 = (err) => Boolean(err) && Boolean(err.response) && err.response.status === 400;
++const recoveryBackoffMs = (attempt) => 250 * 2 ** attempt + Math.floor(Math.random() * 250);
++// LOCAL PATCH: the req id is a content hash of the last user message, so every
++// upstream call inside one agentic turn repeats a byte-identical scrub WARN
++// (measured 28x for one req id). Emit it only when the (session id, count)
++// pair changes. Bounded: cleared once it tracks more than 1000 sessions.
++// Self-contained on purpose - this sits inside the region reapply-patches.sh
++// extracts and loads standalone for its smoke test.
++const SCRUB_WARN_MEMORY_MAX = 1000;
++const scrubWarnMemory = new Map();
++const shouldLogScrubWarn = (sessionId, count) => {
++	const key = sessionId ?? "?";
++	if (scrubWarnMemory.get(key) === count) return false;
++	if (scrubWarnMemory.size > SCRUB_WARN_MEMORY_MAX) scrubWarnMemory.clear();
++	scrubWarnMemory.set(key, count);
++	return true;
++};
+ const createResponses = async (payload, { vision, initiator, subagentMarker, requestId, sessionId, compactType, transport = "http", signal }) => {
+ 	if (!state.copilotToken) throw new Error("Copilot token not found");
++	const logTag = `[req=${requestId ?? "?"} sess=${sessionId ?? "?"}]`;
++	const staleBlobs = scrubStaleEncryptedContent(payload);
++	// LOCAL PATCH: dedup, see shouldLogScrubWarn above.
++	if (staleBlobs > 0 && shouldLogScrubWarn(sessionId, staleBlobs)) consola.warn(`LOCAL PATCH ${logTag}: replaced ${staleBlobs} stale encrypted payload(s) the backend can no longer decrypt`);
++	const neutralizedMarkers = neutralizeAnalysisChannelMarkers(payload);
++	if (neutralizedMarkers > 0) consola.warn(`LOCAL PATCH ${logTag}: neutralised ${neutralizedMarkers} harmony analysis-channel marker(s) that Copilot rejects with "Request blocked."`);
++	const replayStages = rememberedRecoveryStages(sessionId);
++	for (let i = 0; i < replayStages; i++) {
++		const scrubbed = RECOVERY_STAGES[i].scrub(payload);
++		if (scrubbed > 0) consola.warn(`LOCAL PATCH ${logTag}: pre-applied a recovery this session already needed - ${scrubbed} ${RECOVERY_STAGES[i].label}`);
++	}
+ 	const headers = {
+ 		...copilotHeaders(state, requestId, vision),
+ 		"x-initiator": initiator
+@@ -1968,7 +2291,63 @@
+ 		signal,
+ 		subagentMarker
+ 	}));
+-	return await createHttpResponses(payload, headers, signal);
++	const reportUnrecovered = async (upstreamMessage) => {
++		consola.warn(`LOCAL DIAGNOSTIC ${logTag}: upstream 400 not recovered: ${upstreamMessage || "(body unavailable)"}\n    blob-shaped strings still in the request:\n    ${describeRemainingBlobs(payload)}`);
++		// Off by default: the payload is the whole conversation - source, file
++		// contents, shell output. Enable only while bisecting a wedge.
++		if (process.env.COPILOT_API_DUMP_BLOCKED === "1") try {
++			const dumpPath = path.join(PATHS.APP_DIR, `blocked-payload-${requestId ?? "unknown"}.json`);
++			// LOCAL PATCH: mode 384 (0o600) applies only when the file is created;
++			// chmod covers a dump that already exists with wider permissions. A
++			// chmod failure must not break the diagnostic path.
++			await fs$1.writeFile(dumpPath, JSON.stringify(payload), { mode: 384 });
++			await fs$1.chmod(dumpPath, 384).catch(() => {});
++			consola.warn(`LOCAL DIAGNOSTIC ${logTag}: rejected payload written to ${dumpPath}`);
++		} catch (dumpErr) {
++			consola.warn(`LOCAL DIAGNOSTIC ${logTag}: could not write rejected payload: ${dumpErr}`);
++		}
++	};
++	try {
++		return await createHttpResponses(payload, headers, signal);
++	} catch (initialErr) {
++		if (!isUpstream400(initialErr)) throw initialErr;
++		const initialMessage = await readUpstreamMessage(initialErr);
++		// Gate: scrub-and-retry only for the failure scrubbing can actually fix.
++		if (!RECOVERABLE_400.test(initialMessage)) {
++			await reportUnrecovered(initialMessage);
++			throw initialErr;
++		}
++		let lastErr = initialErr;
++		for (let stage = 0; stage < RECOVERY_STAGES.length; stage++) {
++			// The client may already be gone; do not spend more upstream calls on it.
++			if (signal?.aborted) throw initialErr;
++			const scrubbed = RECOVERY_STAGES[stage].scrub(payload);
++			// Progress invariant: a stage that changes nothing is not a retry
++			// reason. If no stage can change anything, the ladder stops instead of
++			// re-POSTing the same bytes.
++			if (scrubbed === 0) continue;
++			consola.warn(`LOCAL PATCH ${logTag}: upstream 400 - retrying with ${scrubbed} ${RECOVERY_STAGES[stage].label}`);
++			await new Promise((resolve) => setTimeout(resolve, recoveryBackoffMs(stage)));
++			try {
++				const response = await createHttpResponses(payload, headers, signal);
++				rememberRecoveryStages(sessionId, stage + 1);
++				return response;
++			} catch (retryErr) {
++				if (lastErr !== initialErr) releaseErrorBody(lastErr);
++				lastErr = retryErr;
++				if (!isUpstream400(retryErr)) break;
++				if (!RECOVERABLE_400.test(await readUpstreamMessage(retryErr))) break;
++			}
++		}
++		if (lastErr !== initialErr) releaseErrorBody(lastErr);
++		await reportUnrecovered(await readUpstreamMessage(lastErr) || initialMessage);
++		// Rethrow the FIRST error: it is the only one describing the request the
++		// client actually sent, rather than one this code mutated on the way.
++		if (lastErr !== initialErr) try {
++			initialErr.cause = lastErr;
++		} catch {}
++		throw initialErr;
++	}
+ };
+ const createHttpResponses = async (payload, headers, signal) => {
+ 	const transportConfig = getResponsesTransportConfig();

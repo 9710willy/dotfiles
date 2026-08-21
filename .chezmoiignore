@@ -14,3 +14,10 @@
 # Generated files
 **/.DS_Store
 **/node_modules/
+
+# Copilot proxy + Codex secrets - never sync
+.local/share/copilot-api/config.json*
+.local/share/copilot-api/github_token
+.local/share/copilot-api/*.sqlite*
+.local/share/copilot-api/logs/
+.codex/auth.json
