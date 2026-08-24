@@ -118,30 +118,6 @@ default_subagent_reasoning_effort = "high"
 [analytics]
 enabled = false
 
-[projects."/Users/willee1/work/web-app"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work/project-b"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work/frontend/editors-app"]
-trust_level = "trusted"
-
-[projects."/Users/willee1"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work/frontend/input-composer"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work/classic/services-app"]
-trust_level = "trusted"
-
-[projects."/Users/willee1/work/project-b/service-b"]
-trust_level = "trusted"
-
 [tui]
 # Closest built-in match to the Claude footer: model, project, Git state,
 # context pressure, and estimated cost. Codex does not expose
