@@ -21,3 +21,10 @@
 .local/share/copilot-api/*.sqlite*
 .local/share/copilot-api/logs/
 .codex/auth.json
+
+{{ if ne .machine.context "company" -}}
+# Copilot proxy: company workstations only
+.local/share/copilot-api/
+Library/LaunchAgents/com.willee1.copilot-api.plist
+Library/LaunchAgents/com.willee1.copilot-api-watchdog.plist
+{{ end -}}
