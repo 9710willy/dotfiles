@@ -136,6 +136,12 @@ trust_level = "trusted"
 [projects."/Users/willee1/work/frontend/input-composer"]
 trust_level = "trusted"
 
+[projects."/Users/willee1/work/classic/services-app"]
+trust_level = "trusted"
+
+[projects."/Users/willee1/work/project-b/service-b"]
+trust_level = "trusted"
+
 [tui]
 # Closest built-in match to the Claude footer: model, project, Git state,
 # context pressure, and estimated cost. Codex does not expose

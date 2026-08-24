@@ -60,22 +60,44 @@ Every finding must pass all three gates or be dropped:
 Mark each finding codeFixable — false if it needs a live AT pass, the
 consuming host app, or a product decision.
 
+Then two more fields on every finding:
+- falsePositiveCase: the strongest specific reason this barrier might NOT be
+  real — the visually-hidden label you may have missed, the role the host app
+  supplies, the AT that handles it anyway. "none: <fact>" only if you checked
+  and can name the fact. A barrier you cannot argue against is one you have
+  not tested.
+- confidence: integer 0-100, decided AFTER writing falsePositiveCase. 90+ only
+  for barriers you traced to a specific AT behaviour; 70-89 real but the AT
+  behaviour is inferred; 40-69 a genuine maybe; below 40 drop it. Use the whole
+  range — if everything is 95 or 100 the scale is binary and ranks nothing.
+
 Signal over volume: 3 real barriers beat 30 nits. A scanner already catches
 contrast-on-paper and missing alt; find what it can't. An empty findings
 array is an honest answer if your lens is clean.
 
 Return JSON only:
 {"findings":[{"severity":"blocker|major|minor|nit","wcag":"...","file":"...",
-"line":123,"code":"...","finding":"...","fix":"...","codeFixable":true}],
+"line":123,"code":"...","finding":"...","fix":"...","codeFixable":true,
+"falsePositiveCase":"...","confidence":0}],
 "summary":"..."}
 ```
 
 ## Report
 
 1. **Verdict** — ship / fix-first / blocked, one line.
-2. **Findings by severity** (blocker → nit), each tagged with lens + WCAG SC, deduped across lenses.
+2. **Findings by severity** (blocker → nit), then confidence descending within each severity. Each tagged with lens + WCAG SC and its confidence (`conf NN`), deduped across lenses. Print each finding's false-positive case on its own line — it is what tells the reader which findings to check first.
 3. **Code-fixable vs needs-live-pass** — split so the mergeable fixes are obvious.
 4. **Manual live-test script** — the exact keyboard + screen-reader steps a human must run to certify the result (e.g. "VoiceOver: Tab to the field, type an error, confirm it announces; open suggestions with Enter, confirm focus traps and Esc returns focus"). Static review cannot certify the lived experience; the last mile is real assistive tech.
+
+## Label log
+
+After printing the report, append one JSON object per finding to `~/.claude/review-labels.jsonl` — the same file the `dev-review` skill writes:
+
+```json
+{"ts":"<ISO8601>","target":"<range or PR>","file":"...","line":0,"lens":"...","severity":"...","confidence":0,"finding":"...","outcome":null}
+```
+
+Leave `outcome` null; set it to `fixed`, `skipped`, or `no_change_needed` when the finding is acted on. Without this the confidence numbers are unfalsifiable.
 
 ## Editing this skill
 

@@ -4,3 +4,7 @@
 .DS_Store
 ._*
 Thumbs.db
+
+# mise machine-local tool pins (never belongs in a shared repo)
+mise.local.toml
+.mise.local.toml

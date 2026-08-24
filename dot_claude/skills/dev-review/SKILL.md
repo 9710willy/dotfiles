@@ -64,7 +64,7 @@ Workflow({
 
 For a full-stack diff, frontend lenses get only the frontend files and backend lenses only the backend files; the three always-on lenses get the whole diff.
 
-It returns `{ findings, resolved, disputed, summaries, counts, lensesRun, lensesSelected }` — findings already deduped, conflict-resolved (verified beats unverified; genuine trade-offs become `disputed`), and sorted blocker → nit, file, line.
+It returns `{ findings, resolved, disputed, summaries, counts, lensesRun, lensesSelected }` — findings already deduped, conflict-resolved (verified beats unverified; genuine trade-offs become `disputed`), and sorted blocker → nit, then **confidence descending**, then file, line.
 
 ## Report format
 
@@ -74,9 +74,10 @@ It returns `{ findings, resolved, disputed, summaries, counts, lensesRun, lenses
 **Lenses run:** <list> (<N> of <M>)
 
 ## Blockers — must fix before merge
-- **[Lens]** `file:line` — <consequence>
+- **[Lens]** `file:line` — <consequence>  ·  **conf NN**
   - `<quoted code>`
   - Principle: <named> · Fix: <suggestion>
+  - Might be wrong because: <falsePositiveCase>
 
 ## Major — should fix
 ## Minor — worth fixing
@@ -96,6 +97,28 @@ It returns `{ findings, resolved, disputed, summaries, counts, lensesRun, lenses
 ```
 
 Omit Disputed and Resolved when empty. Append "(unverified: <whatToCheck>)" to findings with `unverified: true`. Zero nits is a good sign — do not pad.
+
+## Confidence and the false-positive case
+
+Every finding carries `confidence` (integer 0-100) and `falsePositiveCase` (the strongest argument that the finding is wrong). Both are enforced by the schema in `workflow.js`.
+
+**Why a wide scale.** A two-value verdict — confirmed / plausible, verified / unverified — ties almost everything and forces the reader to eyeball the whole list. Measured on a 20-case set: a 0-100 scale separated real findings from false ones with **zero ties**, while the binary verdict tied 80% of pairs. Ranking is the entire value; a scale you only use two values of gives you none.
+
+Watch for clumping. If reviewers pile up at 95 and 100, the scale has collapsed back to binary and the ranking is worthless — tighten the lens prompts rather than trusting the order.
+
+**Why the false-positive case.** It is a lie detector, not a disclaimer. A reviewer that cannot argue against its own finding has not tested it — it is agreeing with itself. A `falsePositiveCase` that is vague or absent is the signal to distrust that finding regardless of its confidence.
+
+## Label log
+
+After rendering the report, append one JSON object per finding to `~/.claude/review-labels.jsonl`:
+
+```json
+{"ts":"<ISO8601>","target":"<range or PR>","file":"...","line":0,"lens":"...","severity":"...","confidence":0,"finding":"...","outcome":null}
+```
+
+Leave `outcome` null. When findings are later acted on, set it to `fixed`, `skipped`, or `no_change_needed`.
+
+This is the only source of ground truth for whether the confidence numbers mean anything. Without it the scale is unfalsifiable. Do not skip it, and do not backfill outcomes by guessing.
 
 ## Editing this skill
 
