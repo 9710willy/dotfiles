@@ -1,6 +1,3 @@
--- Moved here from the old clangd_extensions "server" table; that plugin
--- no longer starts the server. Capabilities and on_attach come from the
--- vim.lsp.config('*') defaults in lua/settings/lsp.lua.
 return {
 	cmd = {
 		"clangd",

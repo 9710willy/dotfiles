@@ -1,329 +1,111 @@
-# Neovim Workflows Guide
+# Neovim workflows
 
-Reference for the keymaps and commands in this config.
 Leader is `<Space>`. Local leader is `,`.
 
-## Quick Reference
+## Manage plugins
 
-| Action | Keybind | Description |
-|--------|---------|-------------|
-| Save | `<leader>w` or `<C-s>` (insert) | Save current buffer |
-| Quit | `<leader>q` | Quit all |
-| Save+Quit | `<leader>x` | Save and quit |
-| Close buffer | `<leader>d` | Delete buffer (keeps window) |
-| Yank to clipboard | `y+{motion}` | Yank into the `+` register |
+Neovim 0.12 manages plugins with `vim.pack`.
 
----
+- Run `:lua vim.pack.update()` to review and install updates.
+- Restart Neovim after an update.
+- Run `:checkhealth` to check the setup.
 
-## 1. Navigation & Motion
+The lock file is `nvim-pack-lock.json`.
 
-### Flash.nvim
-- `z` - Jump to any visible character (type target chars)
-- `Z` - Jump with treesitter nodes (select code blocks)
-- `r` (operator-pending) - Remote flash for distant operations
-- `R` (visual/operator) - Treesitter search across the file
-- `<C-f>` (search cmdline) - Toggle flash labels in `/` search
+## Find files and text
 
-### Window/Tab Movement
-- `<C-h/j/k/l>` - Move between windows
-- `<C-Left/Right>` - Move between tabs
-- `{` / `}` - Previous/next symbol (active once Aerial is loaded)
-- `5j` / `5k` - Counted jumps also land in the jumplist
-- `<leader>j` - Telescope jumplist
+Mini Pick provides the main pickers.
 
-### Harpoon
-- `<leader>a` - Add file to the list
-- `<leader>h` - Open the quick menu
-- `<leader>1`..`<leader>4` - Jump to list entry
+- `<C-d>` finds files.
+- `<C-g>` searches project text.
+- `<C-a>` lists buffers.
+- `<C-s>` lists document symbols.
+- `<leader>c` lists commands.
+- `<leader>j` lists jump locations.
+- `<leader>xx` lists all diagnostics.
+- `<leader>xd` lists diagnostics in the current buffer.
+- `<leader>xr` lists references.
 
-### Bracket Motions (mini.bracketed)
-- `[` / `]` + suffix - Previous/next buffer, comment, diagnostic,
-  quickfix entry, and more; see `:h mini.bracketed`
+Use `<leader>e` to open netrw, Neovim's file explorer.
 
-### Text Objects
-- mini.ai: `i`/`a` + object, plus `in`/`an` (next) and `il`/`al` (last)
-- nvim-various-textobjs: default maps enabled; see `:h nvim-various-textobjs`
-- vim-wordmotion: `w`/`b`/`e` stop inside camelCase and snake_case words
-- `ih` (operator/visual) - Git hunk
+## Move and select
 
-### Treesitter Selection
-- `<C-Space>` - Start, then grow the selection node by node
-- `<BS>` (visual) - Shrink the selection
+- `s` jumps with Flash.
+- `S` selects a Tree-sitter target with Flash.
+- `<C-h>`, `<C-j>`, `<C-k>`, and `<C-l>` move between windows.
+- `<C-Left>` and `<C-Right>` move between tabs.
+- `<C-Space>` grows the Tree-sitter selection.
+- `<BS>` shrinks the Tree-sitter selection.
+- `<leader>a` adds the current file to Harpoon.
+- `<leader>h` opens the Harpoon menu.
+- `<leader>1` through `<leader>4` open Harpoon entries.
 
----
+Mini AI provides text objects. Vim Wordmotion makes `w`, `b`, and `e` stop inside
+camel case and snake case words.
 
-## 2. LSP & Code Intelligence
+## Use LSP features
 
-### Definitions & References
-- `gd` - Definition (Glance popup)
-- `gD` - Declaration
-- `gr` - References (Glance popup; LSP buffers only)
-- `gi` - Implementation
-- `gTD` - Type definition
-- `gS` - Signature help
-- `K` - Hover documentation (hover.nvim)
-- `gK` - Hover with source selection
+Neovim provides the LSP keys and completion UI.
 
-### Code Actions & Refactoring
-- `gA` - Code actions (normal or visual)
-- `<leader>rn` - Rename with live preview (inc-rename)
-- `<leader>re` (visual) - Extract function
-- `<leader>rv` (visual) - Extract variable
-- `<leader>ri` - Inline variable
-- `<leader>rb` / `<leader>rB` - Extract block / to file
-- `<leader>rp` - Insert debug print
-- `<leader>rc` - Clean up debug prints
+- `gd` goes to a definition.
+- `gD` goes to a declaration.
+- `gri` goes to an implementation.
+- `grr` lists references.
+- `grt` goes to a type definition.
+- `grn` renames a symbol.
+- `gra` runs a code action.
+- `gO` lists document symbols.
+- `gS` shows signature help.
+- `K` shows hover help.
 
-### Diagnostics
-- Signs in the sign column; virtual lines for the current line
-- Inlay hints are on for servers that support them
-- Trouble: `<leader>xx` toggle, `<leader>xd` buffer, `<leader>xs` symbols,
-  `<leader>xr` LSP refs, `<leader>xl` loclist, `<leader>xq` qflist
-- `[q` / `]q` - Previous/next Trouble or quickfix item
-
----
-
-## 3. Completion (nvim-cmp)
+The aliases `<leader>rn` and `gA` also rename and run code actions.
 
 In insert mode:
-- `<Tab>` - Next item / jump forward in snippet
-- `<S-Tab>` - Previous item / jump back in snippet
-- `<CR>` - Confirm selection
-- `<C-Space>` - Trigger completion
-- `<C-e>` - Abort
-- `<C-b>` / `<C-f>` - Scroll docs
 
-Sources (priority order): LSP signature help, LSP, snippets, path, buffer.
-Lua API completion comes from lazydev through the LSP source.
-
----
-
-## 4. Git Workflow
-
-### Neogit
-- `<leader>g` - Open Neogit status
-
-In the Neogit buffer:
-- `s` - Stage file/hunk
-- `u` - Unstage
-- `c` - Commit
-- `p` - Push
-- `F` - Pull
-- `b` - Branch operations
-- `?` - Help
-
-### Gitsigns (in-buffer)
-- `]c` / `[c` - Next/previous hunk
-- `<leader>hs` / `<leader>hr` - Stage/reset hunk (also visual)
-- `<leader>hS` / `<leader>hR` - Stage/reset buffer
-- `<leader>hp` / `<leader>hi` - Preview hunk (float/inline)
-- `<leader>hb` - Blame line; `<leader>gb` - Toggle line blame
-- `<leader>hd` / `<leader>hD` - Diff against index / last commit
-- Stage a staged hunk again to unstage it
-
-### Git Conflict
-When conflicts occur:
-- `co` - Choose ours
-- `ct` - Choose theirs
-- `cb` - Choose both
-- `c0` - Choose none
-
-### Git Links
-- `<leader>gy` - Copy permalink to the current line/selection
-- `<leader>gY` - Open the permalink in the browser
-- `<leader>gB` - Copy blame link
-
-### Diffview
-- `:DiffviewOpen` - View all changes
-- `:DiffviewFileHistory` - File history
-
----
-
-## 5. File Navigation
-
-### Telescope
-- `<C-d>` - Find files
-- `<C-g>` - Live grep
-- `<C-a>` - Buffers
-- `<C-s>` - Symbols (Aerial)
-- `<leader>c` - Commands
-- `<leader>j` - Jumplist
-- `:Telescope undo` - Undo history tree
-
-### Neo-tree
-- `:Neotree` - File explorer (also opens when you edit a directory)
-- `a` - Add file
-- `d` - Delete
-- `r` - Rename
-- `c` - Copy
-- `m` - Move
-
----
-
-## 6. Editing
-
-### Yank Ring (yanky)
-- `p` / `P` - Put after/before
-- `<C-p>` / `<C-n>` - Cycle yank history right after a put
-- `]p` / `[p` - Put with adjusted indent
-
-### Surround (mini.surround)
-- `sa{motion}{char}` - Add surround
-- `sd{char}` - Delete surround
-- `sr{old}{new}` - Replace surround
-
-Example: `saiw"` surrounds the word with quotes.
-
-### Comments (mini.comment)
-- `gc{motion}` - Comment lines
-- `gcc` - Comment current line
-- Visual select + `gc` - Comment selection
-
-### Operators (mini.operators)
-- `g=` - Evaluate
-- `gx` - Exchange
-- `gm` - Multiply (duplicate)
-- `gs` - Sort
-- `gr` - Replace with register (LSP buffers map `gr` to references instead)
-
-Note: mini.align is installed, but mini.operators owns `g=`,
-so alignment has no reachable mapping right now.
-
-### Split/Join (mini.splitjoin)
-- `gJ` - Toggle between single-line and multi-line
-
-### Move Lines (mini.move)
-- `Alt-h/j/k/l` - Move selection/line in that direction
-
-### Search & Replace (Spectre)
-- `<leader>S` - Toggle project-wide search and replace
-- `<leader>sw` - Search current word (normal) or selection (visual)
-- `<leader>sp` - Search in the current file
-
-### Annotations (neogen)
-- `,d` - Generate doc comment
-- `,df` / `,dc` - Function / class doc comment
-
-### Folds
-- Treesitter folding; `za`/`zc`/`zo` as usual
-- `zR` / `zM` - Open/close all folds (ufo)
-- `zK` - Peek folded lines
-
----
-
-## 7. REPL & Interactive Development
-
-### Iron.nvim
-- `<leader>rs` - Open REPL
-- `<leader>rf` - Focus REPL
-- `<leader>rr` - Restart REPL
-- `<leader>rh` - Hide REPL
-- `<C-CR>` - Send line/selection to REPL
-- `<C-c>{motion}` - Send motion to REPL
-
-Configured REPLs: Python (ptipython), OCaml (utop), Lua (croissant).
-
----
-
-## 8. Debugging (DAP)
-
-- `:Debug` or `<F5>` - Start/continue
-- `:BreakpointToggle` - Toggle breakpoint
-- `:DapREPL` - Open debug REPL
-- `<F10>` / `<F11>` / `<F12>` - Step over / into / out
-
-DAP UI opens on debug start. Adapters: debugpy, lldb-dap, nlua.
-
----
-
-## 9. Formatting & Linting
-
-### Format (conform.nvim)
-- `<leader>f` - Format buffer (or selection)
-
-Formatting is manual. There is no format-on-save.
-
-### Lint (nvim-lint)
-Runs on open, save, and leaving insert mode. Linters:
-- Lua: selene
-- JS/TS: eslint_d
-- Shell: shellcheck
-- C/C++: flawfinder
-- LaTeX: chktex
-- Vimscript: vint
-- Commit messages: gitlint
-
-### Rulebook
-- `<leader>i` - Ignore lint rule at cursor
-- `<leader>l` - Look up lint rule docs
-
----
-
-## 10. Session Management
-
-### Mini.sessions
-- `<leader>s` - Save session (named after current directory)
-- Sessions are listed on the start screen
-
----
-
-## 11. Terminal
-
-### Toggleterm
-- `<leader>tt` - Toggle floating terminal
-- `<leader>t1` / `<leader>t2` / `<leader>t3` - Numbered terminals
-- `<Esc><Esc>` - Leave terminal mode
-- flatten.nvim opens `nvim` calls from the terminal in the outer instance
-
----
-
-## 12. Code Outline
-
-### Aerial
-- `:AerialToggle` - Toggle outline sidebar
-- `{` / `}` - Jump between symbols (after Aerial loads)
-- `<C-s>` - Fuzzy-find symbols via Telescope
-
-### Barbecue
-Breadcrumbs in the winbar show the current code context.
-
----
-
-## 13. UI
-
-### Noice
-- Enhanced messages, cmdline, and popups
-- Search shows at the bottom
-- LSP progress comes from fidget.nvim, not noice
-
-### Mini.clue
-Pause after `<leader>`, `g`, `z`, `'`, `"`, `<C-w>` to see available keys.
-
-### Focus.nvim
-Auto-resizes windows to favor the active one.
-
----
-
-## 14. Python
-
-### Venv Selector
-- `<leader>pv` - Select virtual environment
-
----
-
-## Tips
-
-1. Use Flash for movement: `z`, then type the target.
-2. `<leader>rn` renames with a live preview.
-3. `<leader>s` saves a session; pick it from the start screen.
-4. `<leader>g` opens the full git workflow.
-5. `<leader>rs` then `<C-CR>` sends code to a REPL.
-6. `<leader>f` formats; saving does not format.
-
----
-
-## Discovering More
-
-- `:Lazy` - Plugin manager
-- `:checkhealth` - Verify setup
-- `:Telescope keymaps` - Search all keybindings
+- Completion opens as you type.
+- `<C-Space>` asks the LSP server for completion.
+- `<Tab>` and `<S-Tab>` move through items or snippet fields.
+- `<CR>` accepts the selected item.
+
+## Edit text
+
+- `<leader>w` saves the current buffer.
+- `<leader>d` deletes the current buffer.
+- `<Esc>` clears search highlights.
+- `gc{motion}` comments text. Use `gcc` for one line.
+- `gza{motion}{char}` adds a surround.
+- `gzd{char}` deletes a surround.
+- `gzr{old}{new}` replaces a surround.
+- `gJ` splits or joins a code block.
+- `<leader>S` opens project search and replace.
+- `<leader>f` formats the current buffer or selection.
+- `,d` creates a documentation comment.
+
+Tree-sitter provides folds. Use standard fold keys such as `za`, `zc`, `zo`,
+`zR`, and `zM`.
+
+## Use Git
+
+- `<leader>g` opens Neogit.
+- `]c` and `[c` move between changed hunks.
+- `<leader>hs` stages or unstages a hunk.
+- `<leader>hr` resets a hunk.
+- `<leader>hp` previews a hunk.
+- `<leader>gb` toggles line blame.
+- `<leader>gy` copies a link to the current line or selection.
+- `<leader>gY` opens that link.
+- `:DiffviewOpen` opens the diff view.
+
+## Run code
+
+- `<leader>tt` opens a native terminal split.
+- `<Esc><Esc>` leaves terminal mode.
+- `<leader>rs` opens an Iron REPL.
+- `<C-CR>` sends a line or selection to the REPL.
+- `<F5>` starts or continues a debug session.
+- `<F10>`, `<F11>`, and `<F12>` step over, into, and out.
+
+## Save sessions
+
+- `<leader>s` saves a session named after the current directory.
+- The start screen lists saved sessions and recent files.

@@ -1,65 +1,20 @@
 local autocmd = vim.api.nvim_create_autocmd
-local augroup = vim.api.nvim_create_augroup
-autocmd("VimEnter", {
-	group = augroup("start_screen", { clear = true }),
-	once = true,
-	callback = function()
-		-- 'insertmode' check dropped: the option was removed from nvim
-		if vim.fn.argc() ~= 0 or not vim.o.modifiable then
-			vim.api.nvim_exec_autocmds("User", { pattern = "ActuallyEditing" })
-			return
-		end
-	end,
-})
-local misc_aucmds = augroup("misc_aucmds", { clear = true })
-autocmd("BufWinEnter", { group = misc_aucmds, command = "checktime" })
+local group = vim.api.nvim_create_augroup("misc_autocmds", { clear = true })
+
+autocmd("BufWinEnter", { group = group, command = "checktime" })
 autocmd("TextYankPost", {
-	group = misc_aucmds,
+	group = group,
 	callback = function()
 		vim.hl.on_yank()
 	end,
 })
-autocmd("FileType", { group = misc_aucmds, pattern = "qf", command = "set nobuflisted" })
-vim.cmd([[silent! autocmd! FileExplorer *]])
-autocmd("BufEnter", {
-	group = misc_aucmds,
-	pattern = "*",
-	callback = function(args)
-		local file_info = vim.uv.fs_stat(args.file)
-		if file_info and file_info.type == "directory" then
-			-- loads neo-tree (spec: event = "User EditingDirectory"); its own
-			-- hijack autocmds handle later directory buffers
-			vim.api.nvim_exec_autocmds("User", { pattern = "EditingDirectory" })
-			return true
-		end
-	end,
-})
-autocmd({ "BufReadPre", "BufNewFile" }, {
-	group = misc_aucmds,
-	callback = function()
-		require("settings.lsp")
-	end,
-	once = true,
-})
-
--- Create barbecue updater group once, outside the callback
-local barbecue_group = augroup("barbecue.updater", { clear = true })
+autocmd("FileType", { group = group, pattern = "qf", command = "setlocal nobuflisted" })
 autocmd("BufReadPost", {
-	group = misc_aucmds,
-	once = true,
-	callback = function()
-		autocmd({
-			"WinScrolled",
-			"WinResized",
-			"BufWinEnter",
-			"CursorHold",
-			"InsertLeave",
-			"BufModifiedSet",
-		}, {
-			group = barbecue_group,
-			callback = function()
-				require("barbecue.ui").update()
-			end,
-		})
+	group = group,
+	callback = function(args)
+		local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+		if mark[1] > 0 and mark[1] <= vim.api.nvim_buf_line_count(args.buf) then
+			pcall(vim.api.nvim_win_set_cursor, 0, mark)
+		end
 	end,
 })

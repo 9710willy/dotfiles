@@ -48,7 +48,6 @@ require("gitsigns").setup({
 			end)
 			return "<Ignore>"
 		end, { expr = true, desc = "Prev hunk" })
-		-- Actions
 		map("n", "<leader>hs", gs.stage_hunk, { desc = "Stage hunk" })
 		map("n", "<leader>hr", gs.reset_hunk, { desc = "Reset hunk" })
 		map("v", "<leader>hs", function()
@@ -71,7 +70,6 @@ require("gitsigns").setup({
 		map("n", "<leader>hD", function()
 			gs.diffthis("~")
 		end, { desc = "Diff this ~" })
-		-- Text object
 		map({ "o", "x" }, "ih", gs.select_hunk, { desc = "Select hunk" })
 	end,
 })

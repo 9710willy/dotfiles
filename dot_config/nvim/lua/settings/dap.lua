@@ -1,6 +1,5 @@
 local dap = require("dap")
 
--- Debugpy (Python)
 dap.adapters.python = {
 	type = "executable",
 	command = "python3",
@@ -27,7 +26,6 @@ dap.configurations.python = {
 	},
 }
 
--- Neovim Lua
 dap.adapters.nlua = function(callback, config)
 	callback({ type = "server", host = config.host, port = config.port })
 end
@@ -52,9 +50,6 @@ dap.configurations.lua = {
 	},
 }
 
--- LLDB (C/C++/Rust)
--- Note: On macOS, install llvm via Homebrew: brew install llvm
--- On Linux, install lldb: apt install lldb or similar
 dap.adapters.lldb = {
 	type = "executable",
 	command = "/opt/homebrew/opt/llvm/bin/lldb-dap",

@@ -2,6 +2,7 @@ vim.opt.textwidth = 100
 vim.opt.scrolloff = 7
 vim.opt.wildignore = { "*.o", "*~", "*.pyc" }
 vim.opt.wildmode = "longest,full"
+vim.opt.wildoptions = { "pum", "fuzzy" }
 vim.opt.whichwrap:append("<,>,h,l")
 vim.opt.showmatch = true
 vim.opt.ignorecase = true
@@ -14,7 +15,7 @@ vim.opt.relativenumber = true
 vim.opt.smartindent = true
 vim.opt.showmode = false
 vim.opt.shada = [['20,<50,s10,h,/100]]
-vim.opt.shortmess:append("c")
+vim.opt.shortmess:append("WSIcF")
 vim.opt.guicursor = [[n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50]]
 vim.opt.updatetime = 100
 vim.opt.conceallevel = 2
@@ -32,3 +33,21 @@ vim.opt.splitright = true
 vim.opt.timeoutlen = 400
 vim.opt.fillchars = [[vert:│,horiz:─,eob: ,fold: ,foldsep: ]]
 vim.opt.switchbuf = "useopen,uselast"
+vim.opt.autocomplete = true
+vim.opt.completeopt = { "menuone", "noselect", "popup", "fuzzy" }
+vim.opt.pumheight = 15
+
+vim.g.netrw_banner = 0
+vim.g.netrw_liststyle = 3
+vim.g.netrw_browse_split = 0
+vim.g.netrw_winsize = 25
+
+local function enable_ui2()
+	require("vim._core.ui2").enable()
+end
+
+if #vim.api.nvim_list_uis() > 0 then
+	enable_ui2()
+else
+	vim.api.nvim_create_autocmd("UIEnter", { once = true, callback = enable_ui2 })
+end

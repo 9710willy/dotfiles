@@ -1,10 +1,7 @@
 return {
 	cmd = { "vscode-eslint-language-server", "--stdio" },
 	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte" },
-	-- ESLint uses push diagnostics, not pull — disable neovim 0.11+ pull diagnostics
-	-- to prevent "request textDocument/diagnostic failed" errors.
-	-- Global buffer setup (keymaps, navic, inlay hints) runs via the
-	-- LspAttach autocmd in lua/settings/lsp.lua.
+	-- ESLint uses push diagnostics. Neovim's pull request fails for this server.
 	on_attach = function(client)
 		client.server_capabilities.diagnosticProvider = nil
 	end,
@@ -17,7 +14,7 @@ return {
 			showDocumentation = { enable = true },
 		},
 		codeActionOnSave = { mode = "problems" },
-		format = false, -- Let other formatters handle this
+		format = false,
 		nodePath = "",
 		onIgnoredFiles = "off",
 		problems = { shortenToSingleLine = false },

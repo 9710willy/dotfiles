@@ -1,7 +1,6 @@
 return {
 	cmd = { "lua-language-server" },
 	filetypes = { "lua" },
-	-- lazydev.nvim handles neovim lua setup automatically (replaced neodev)
 	single_file_support = true,
 	settings = {
 		Lua = {
@@ -37,7 +36,6 @@ return {
 				},
 				unusedLocalExclude = { "_*" },
 			},
-			-- formatting stays with stylua (conform.nvim)
 			format = { enable = false },
 			telemetry = { enable = false },
 		},
