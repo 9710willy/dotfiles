@@ -1,3 +1,44 @@
+{{- /* Bootstrap only. Codex and Imoten own later dynamic settings. */ -}}
+{{- $provider := "copilot" -}}
+{{- if hasKey . "codex" -}}
+{{-   $provider = .codex.provider -}}
+{{- end -}}
+{{- if eq $provider "deepseek" }}
+model = "deepseek-flash"
+model_provider = "deepseek"
+model_reasoning_effort = "high"
+model_reasoning_summary = "auto"
+approvals_reviewer = "auto_review"
+web_search = "disabled"
+notify = ["{{ .chezmoi.homeDir }}/.codex/notify.sh"]
+
+[model_providers.deepseek]
+name = "DeepSeek"
+base_url = "https://api.deepseek.com"
+env_key = "DEEPSEEK_API_KEY"
+env_key_instructions = "Add DEEPSEEK_API_KEY to ~/.zshrc.local, then start a new shell."
+wire_api = "responses"
+supports_websockets = false
+
+[features]
+memories = false
+apps = false
+multi_agent_v2 = true
+
+[agents]
+default_subagent_model = "deepseek-flash"
+default_subagent_reasoning_effort = "high"
+
+[analytics]
+enabled = false
+
+[tui]
+status_line = ["model-with-reasoning", "project-name", "git-branch", "context-remaining"]
+status_line_use_colors = true
+vim_mode_default = false
+notifications = ["agent-turn-complete", "approval-requested"]
+notification_method = "bel"
+{{- else if eq $provider "copilot" }}
 model = "gpt-5.6-sol"
 model_provider = "copilot"
 model_reasoning_effort = "max"
@@ -44,7 +85,7 @@ web_search = "live"
 
 # Ported from the Claude Code setup on 2026-08-19. Codex passes a JSON
 # notification payload as the final argument.
-notify = ["/Users/willee1/.codex/notify.sh"]
+notify = ["{{ .chezmoi.homeDir }}/.codex/notify.sh"]
 
 [model_providers.copilot]
 # name MUST be "OpenAI" — codex only handles encrypted reasoning
@@ -131,3 +172,6 @@ notification_method = "bel"
 
 [tui.model_availability_nux]
 "gpt-5.6-sol" = 4
+{{- else }}
+{{-   fail "codex.provider must be copilot or deepseek" -}}
+{{- end }}

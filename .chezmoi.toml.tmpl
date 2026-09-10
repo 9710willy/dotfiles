@@ -3,6 +3,7 @@
 {{- $gitName := "" -}}
 {{- $gitEmail := "" -}}
 {{- $gitSigningKey := "" -}}
+{{- $codexProvider := "" -}}
 
 {{- /* Prompt for machine context on init */ -}}
 {{- $hostname := .chezmoi.hostname -}}
@@ -18,6 +19,14 @@
 {{-   $gitSigningKey = "none" -}}
 {{- end -}}
 
+{{- $codexProvider = promptStringOnce . "codex.provider" "Codex provider (copilot/deepseek)" -}}
+{{- if and (ne $codexProvider "copilot") (ne $codexProvider "deepseek") -}}
+{{-   fail "Codex provider must be copilot or deepseek" -}}
+{{- end -}}
+{{- if and (eq $codexProvider "copilot") (ne $context "company") -}}
+{{-   fail "The Copilot provider requires the company machine context" -}}
+{{- end -}}
+
 [data]
 [data.machine]
     context = {{ $context | quote }}
@@ -27,6 +36,9 @@
     name = {{ $gitName | quote }}
     email = {{ $gitEmail | quote }}
     signingKey = {{ $gitSigningKey | quote }}
+
+[data.codex]
+    provider = {{ $codexProvider | quote }}
 
 [git]
     autoCommit = true

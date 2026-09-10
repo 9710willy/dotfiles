@@ -78,6 +78,18 @@ check "gh (GitHub CLI) installed" "command -v gh"
 check "jq installed" "command -v jq"
 
 echo ""
+echo "Codex:"
+check "Codex installed" "command -v codex"
+check "Codex config loads" "(set +o pipefail; codex doctor --json 2>/dev/null | jq -e '.checks[\"config.load\"].status == \"ok\"')"
+check "Imoten plugin installed" "codex plugin list --json | jq -e '.installed[] | select(.name == \"imoten\" and .installed == true)'"
+{{- if eq .codex.provider "deepseek" }}
+check "DeepSeek API key set" "[[ -n \${DEEPSEEK_API_KEY:-} ]]"
+{{- else }}
+check "Copilot API key set" "[[ -n \${COPILOT_API_KEY:-} ]]"
+{{- end }}
+warn "Imoten model roles configured" "[[ -f ~/.codex/imoten-models.md ]]"
+
+echo ""
 echo "Git Config:"
 check "git user.name set" "git config --global user.name"
 check "git user.email set" "git config --global user.email"

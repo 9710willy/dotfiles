@@ -22,9 +22,14 @@
 .local/share/copilot-api/logs/
 .codex/auth.json
 
-{{ if ne .machine.context "company" -}}
-# Copilot proxy: company workstations only
+{{ if ne .codex.provider "deepseek" -}}
+.codex/imoten-models.md
+{{ end -}}
+
+{{ if or (ne .machine.context "company") (ne .codex.provider "copilot") -}}
+# Copilot proxy: company workstations that select Copilot only
 .local/share/copilot-api/
 Library/LaunchAgents/com.willee1.copilot-api.plist
 Library/LaunchAgents/com.willee1.copilot-api-watchdog.plist
+.wakeup
 {{ end -}}

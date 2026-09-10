@@ -1,0 +1,49 @@
+# Imoten model roles
+
+Configured for the direct DeepSeek provider on {{ .chezmoi.hostname }}.
+
+## Selection rule
+
+Use the exact model and effort pair in this file. Before dispatch, require the Codex selector and the configured provider to serve the pair. Stop the lane if either check fails. Do not inherit another model or select a substitute.
+
+## Codex picker models
+
+| Display name | Model | Supported reasoning effort |
+| --- | --- | --- |
+| DeepSeek Flash | `deepseek-flash` | `high` |
+
+## Role map
+
+| Role | Model | Reasoning effort |
+| --- | --- | --- |
+| Fast profile | `deepseek-flash` | `high` |
+| Instruction-following profile | `deepseek-flash` | `high` |
+| Judgment and prose profile | `deepseek-flash` | `high` |
+| Poteto agent | `deepseek-flash` | `high` |
+| Comment auditor | `deepseek-flash` | `high` |
+| Feature delegate | `deepseek-flash` | `high` |
+| Refactoring delegate | `deepseek-flash` | `high` |
+| Bug-fix delegate | `deepseek-flash` | `high` |
+| Performance delegate | `deepseek-flash` | `high` |
+| Hillclimb delegate | `deepseek-flash` | `high` |
+| Hardest tasks | `deepseek-flash` | `high` |
+| How explorer | `deepseek-flash` | `high` |
+| How explainer | `deepseek-flash` | `high` |
+| Why investigator | `deepseek-flash` | `high` |
+| Why synthesizer | `deepseek-flash` | `high` |
+| Reflect tooling | `deepseek-flash` | `high` |
+| Reflect judgment | `deepseek-flash` | `high` |
+| Reflect divergent | `deepseek-flash` | `high` |
+| Reflect synthesizer | `deepseek-flash` | `high` |
+| Swarm worker | `deepseek-flash` | `high` |
+| Arena runners | Shared review panel | See below |
+| Arena cross-judges | Shared review panel | See below |
+| Architect runners | Shared review panel | See below |
+| Interrogate reviewers | Shared review panel | See below |
+| Independent verifiers | Shared review panel | See below |
+
+## Shared review panel
+
+1. `deepseek-flash` with `high`
+
+This map uses one provider and cannot supply a multi-vendor panel. DeepSeek documented `deepseek-flash`, the Responses API, tool calls, and `high` reasoning effort on 2026-09-10 at <https://api-docs.deepseek.com/api/create-response/>. The workstation must complete a live request before it dispatches an agent.

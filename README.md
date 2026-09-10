@@ -5,7 +5,7 @@ Personal dotfiles managed with [chezmoi](https://www.chezmoi.io/).
 ## Quick Setup
 
 ```bash
-# One-liner for new Mac (will prompt for machine context)
+# One-liner for new Mac. It prompts for machine context and Codex provider.
 chezmoi init --apply 9710willy/dotfiles
 ```
 
@@ -30,6 +30,11 @@ On first init, you'll be prompted for machine context:
 
 - `company` - Work machine (prompts for git name/email/GPG key)
 - `personal` - Personal machine (uses GitHub noreply email)
+
+You also select one Codex provider:
+
+- `copilot` uses the local enterprise Copilot proxy on a company machine.
+- `deepseek` calls the DeepSeek API directly. It does not install or run `copilot-api`.
 
 ### Company Machine Setup
 
@@ -62,6 +67,38 @@ Edit `~/.config/chezmoi/chezmoi.toml`:
 
 Then run `chezmoi apply`.
 
+## Codex with DeepSeek
+
+Select `deepseek` during `chezmoi init`. Chezmoi creates the initial Codex config, then Codex owns later plugin and model entries. Chezmoi installs Codex and Imoten. It keeps the API key in the ignored `~/.zshrc.local` file.
+
+```bash
+touch ~/.zshrc.local
+chmod 600 ~/.zshrc.local
+${EDITOR:-vi} ~/.zshrc.local
+```
+
+Add this line with your real key:
+
+```bash
+export DEEPSEEK_API_KEY='your-key'
+```
+
+Start a new shell. Verify the API connection:
+
+```bash
+codex exec -m deepseek-flash "Reply with OK."
+```
+
+Chezmoi creates `~/.codex/imoten-models.md` once. All Imoten roles use `deepseek-flash` at `high` effort. Do not run `$setup-pstack` on this workstation. That command currently builds its model catalog from `copilot-api`.
+
+Direct DeepSeek does not provide the multi-vendor review panel available through `copilot-api`. Workflows that require different model vendors stop and report that limit. Other Codex and Imoten workflows use DeepSeek directly.
+
+Run the local checks:
+
+```bash
+dotfiles-health
+```
+
 ## Version Managers
 
 This setup uses **mise** (not nvm/pyenv) for Node.js, Python, etc.
@@ -82,6 +119,7 @@ On first run, chezmoi will automatically:
 2. Install packages via `brew bundle` (neovim, tmux, LSPs, etc.)
 3. Clone zsh plugins (powerlevel10k, fast-syntax-highlighting, etc.)
 4. Setup fzf key bindings
+5. Install the Imoten Codex plugin if it is not already installed
 
 ## Helper Scripts
 
@@ -138,6 +176,9 @@ cat → bat          # Syntax highlighted cat
 ~/.local/share/chezmoi/         # Source of truth (committed)
     ├── .chezmoi.toml.tmpl      # Config template (prompts on init)
     ├── Brewfile.tmpl           # Context-aware packages
+    ├── dot_codex/              # Create-only Codex config and DeepSeek role map
     ├── dot_gitconfig.tmpl      # Context-aware git identity
     └── dot_zshrc               # Shell config
 ```
+
+Chezmoi creates `~/.codex/config.toml` only when it is missing. For DeepSeek, it also creates `~/.codex/imoten-models.md` only when that file is missing. Codex and Imoten can then update their runtime-owned settings without losing them on the next `chezmoi apply`.

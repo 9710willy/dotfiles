@@ -1,0 +1,24 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Provider: {{ .codex.provider }}
+# Installer revision: 1
+
+set -euo pipefail
+
+if ! command -v codex >/dev/null 2>&1; then
+  echo "Codex is not installed" >&2
+  exit 1
+fi
+
+if codex plugin list --json | jq -e '.installed[] | select(.name == "imoten" and .installed == true)' >/dev/null; then
+  echo "Imoten is already installed"
+  exit 0
+fi
+
+marketplace_json=$(codex plugin marketplace add 9710willy/imoten --json)
+marketplace_name=$(printf '%s' "$marketplace_json" | jq -er '.marketplaceName')
+codex plugin add "imoten@${marketplace_name}" --json >/dev/null
+
+echo "Installed Imoten from 9710willy/imoten"
+{{ end -}}
