@@ -1,0 +1,46 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Codex provider: {{ .codex.provider }}
+# Installer revision: 2
+# naru is a shared, human-approved context store. Codex reaches it through the
+# `naru` command and through the naru-codex plugin hooks.
+
+set -euo pipefail
+
+naru_dir="${HOME}/.local/share/naru"
+
+# A symlink can outlive the checkout it points at, so run the tool before
+# trusting it. Resolving the name alone reads a dangling link as installed.
+if command -v naru >/dev/null 2>&1 && naru --help >/dev/null 2>&1; then
+  echo "naru is already installed"
+else
+  command -v git >/dev/null 2>&1 || { echo "git is required for naru" >&2; exit 1; }
+  command -v python3 >/dev/null 2>&1 || { echo "python3 is required for naru" >&2; exit 1; }
+
+  if [[ ! -d "${naru_dir}/.git" ]]; then
+    git clone --quiet https://github.com/9710willy/naru.git "${naru_dir}"
+  fi
+
+  (cd "${naru_dir}" && python3 ms.py)
+  mkdir -p "${HOME}/.local/bin"
+  ln -sfn "${naru_dir}/naru.py" "${HOME}/.local/bin/naru"
+
+  echo "Installed naru from 9710willy/naru"
+fi
+
+if ! command -v codex >/dev/null 2>&1; then
+  echo "Codex is not installed, leaving the naru plugin unregistered" >&2
+  exit 0
+fi
+
+if codex plugin list --json | jq -e '.installed[] | select(.name == "naru-codex" and .installed == true)' >/dev/null; then
+  echo "The naru Codex plugin is already installed"
+  exit 0
+fi
+
+codex plugin marketplace add "${naru_dir}/codex" --json >/dev/null
+codex plugin add naru-codex@naru --json >/dev/null
+
+echo "Installed the naru Codex plugin"
+{{ end -}}
