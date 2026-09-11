@@ -8,3 +8,6 @@ Thumbs.db
 # mise machine-local tool pins (never belongs in a shared repo)
 mise.local.toml
 .mise.local.toml
+
+# Claude Code checkpoint scratch, written into every repo it touches
+**/.claude/.cc-writes/
