@@ -25,7 +25,9 @@ chezmoi apply  # Apply changes
 - **Zsh** - Native prompt, syntax highlighting, autosuggestions
 - **Git** - Identity templated (company vs personal)
 - **mise** - Universal version manager (Node, Python, etc.)
-- **Development tools** - Codex, Claude Code, Imoten, Naru, Teio, Yeon, Evolve, Archify, Ripwire, and Ponytail
+- **Development tools** - Codex, Imoten, Naru, Teio, Yeon, Evolve, Archify, Ripwire, and Ponytail
+
+Claude Code is an optional fallback. Chezmoi does not install its runtime or manage its plugins and hooks.
 
 ## Machine Context
 
@@ -36,8 +38,17 @@ On first init, you'll be prompted for machine context:
 
 You also select one Codex provider:
 
-- `copilot` uses the local enterprise Copilot proxy on a company machine.
+- `copilot` uses a preinstalled local enterprise Copilot proxy on a company machine.
 - `deepseek` calls the DeepSeek API directly. It does not install or run `copilot-api`.
+
+## Codex with Copilot
+
+Install `copilot-api` at `~/.local/opt/copilot-api` before you select the
+Copilot option. Load its launch agents too. Chezmoi manages the maintenance
+scripts, launch agent files, and wake hook. It does not install the proxy
+package or load its launch agents.
+
+Run `dotfiles-health` to check the proxy and its services.
 
 ### Company Machine Setup
 
@@ -123,12 +134,10 @@ On first run, chezmoi will automatically:
 1. Install Homebrew (if missing)
 2. Install packages via `brew bundle` (neovim, tmux, LSPs, etc.)
 3. Run one development-workflow setup script
-4. Install Claude Code when it is missing
-5. Clone the development repositories
-6. Link the commands and skills
-7. Install Ripwire and the Codex and Claude plugins
-8. Install the DeepSeek model catalog and Imoten agent profiles
-9. Merge the Naru hook into Claude Code settings
+4. Clone the development repositories
+5. Link the commands and skills
+6. Install Ripwire and the Codex plugins
+7. Install the DeepSeek model catalog and Imoten agent profiles
 
 Private repositories require GitHub CLI authentication. On a new workstation, the first apply installs `gh` and can stop at the authentication gate. Run `gh auth login`, then run `chezmoi apply` again.
 
@@ -162,7 +171,7 @@ On a DeepSeek workstation, Chezmoi creates an empty Teio config. Add a `deepseek
 
 ```bash
 dotfiles-health    # Validate your setup (check for missing tools)
-dotfiles-update    # Update everything (chezmoi, brew, mise, plugins)
+dotfiles-update    # Update chezmoi, Homebrew, and mise
 dev-sync           # Show development repository state
 dev-sync pull      # Pull clean development repositories
 dev-sync push      # Push committed development repositories

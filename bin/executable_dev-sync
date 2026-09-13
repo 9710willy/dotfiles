@@ -25,20 +25,15 @@ if [[ "$mode" == "refresh" ]]; then
     if grep -q '^model_provider = "deepseek"$' "$HOME/.codex/config.toml" 2>/dev/null; then
         update-deepseek-catalog || exit 1
     fi
+    codex plugin remove imoten@imoten-local || exit 1
+    codex plugin marketplace remove imoten-local || exit 1
+    codex plugin marketplace add https://github.com/9710willy/imoten.git --json || exit 1
+    codex plugin add imoten@imoten-local || exit 1
     codex plugin marketplace upgrade ponytail || exit 1
-    for plugin in imoten@imoten-local naru-codex@naru ponytail@ponytail; do
+    for plugin in naru-codex@naru ponytail@ponytail; do
         codex plugin remove "$plugin" || exit 1
         codex plugin add "$plugin" || exit 1
     done
-    if command -v claude >/dev/null 2>&1; then
-        claude plugin marketplace update || exit 1
-        claude_plugins=$(claude plugin list --json) || exit 1
-        for plugin in imoten@willee-imoten evolve@evolve ponytail@ponytail; do
-            if printf '%s' "$claude_plugins" | jq -e --arg plugin "$plugin" '.[]? | select(.id == $plugin)' >/dev/null; then
-                claude plugin update "$plugin" --scope user --yes || exit 1
-            fi
-        done
-    fi
     exit 0
 fi
 

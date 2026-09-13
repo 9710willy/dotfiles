@@ -81,6 +81,8 @@ CODEX_LOG="$root/codex.log" HOME="$home_dir" DEV_HOME_ROOT="$home_dir" DEV_WORK_
     /bin/bash bin/executable_dev-sync refresh >/dev/null
 grep -qx 'plugin marketplace upgrade ponytail' "$root/codex.log"
 grep -qx 'plugin remove imoten@imoten-local' "$root/codex.log"
+grep -qx 'plugin marketplace remove imoten-local' "$root/codex.log"
+grep -qx 'plugin marketplace add https://github.com/9710willy/imoten.git --json' "$root/codex.log"
 grep -qx 'plugin add naru-codex@naru' "$root/codex.log"
 
 echo "dev-sync behavior passed"

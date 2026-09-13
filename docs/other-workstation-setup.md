@@ -71,10 +71,9 @@ Continue when the output contains `OK`.
 dotfiles-health
 dev-sync status
 codex plugin list --json
-claude plugin list --json
 ```
 
-The setup includes Codex, Claude Code, Imoten, Naru, Teio, Yeon, Evolve, Archify, Ripwire, and Ponytail.
+The setup includes Codex, Imoten, Naru, Teio, Yeon, Evolve, Archify, Ripwire, and Ponytail. Claude Code is optional. Chezmoi does not install its runtime or plugins.
 
 ## 6. Test Imoten
 

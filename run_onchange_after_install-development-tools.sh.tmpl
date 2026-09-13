@@ -22,30 +22,15 @@ if [[ ! -r "$repos_file" ]]; then
     exit 1
 fi
 
-if ! gh auth status >/dev/null 2>&1; then
-    echo "GitHub login is required for the private development repositories." >&2
-    echo "Run: gh auth login" >&2
-    echo "Then run: chezmoi apply" >&2
-    exit 1
-fi
-
 mkdir -p "$HOME/work" "$HOME/stuff" "$bin_dir" "$skill_dir"
 
 mise install --yes
-
-if ! command -v claude >/dev/null 2>&1 && [[ ! -x "$HOME/.local/bin/claude" ]]; then
-    claude_installer=$(mktemp)
-    trap 'rm -f "$claude_installer"' EXIT
-    curl -fsSL https://claude.ai/install.sh -o "$claude_installer"
-    bash "$claude_installer"
-    rm -f "$claude_installer"
-    trap - EXIT
-fi
 
 {{- if eq .codex.provider "deepseek" }}
 "$HOME/bin/update-deepseek-catalog"
 {{- end }}
 
+github_ready=0
 while IFS='|' read -r directory repository _push_policy; do
     [[ -z "$directory" || "$directory" == \#* ]] && continue
     [[ "$directory" == "@chezmoi" ]] && continue
@@ -57,6 +42,15 @@ while IFS='|' read -r directory repository _push_policy; do
         echo "Cannot clone $repository because $repo_path exists and is not a Git repository" >&2
         exit 1
     else
+        if [[ "$github_ready" -eq 0 ]]; then
+            if ! gh auth status >/dev/null 2>&1; then
+                echo "GitHub login is required for the private development repositories." >&2
+                echo "Run: gh auth login" >&2
+                echo "Then run: chezmoi apply" >&2
+                exit 1
+            fi
+            github_ready=1
+        fi
         gh repo clone "$repository" "$repo_path"
     fi
 done < "$repos_file"
@@ -94,7 +88,6 @@ link_if_missing "$HOME/work/yeon/skills/yeon" "$skill_dir/yeon"
 mkdir -p "$skill_dir/evolve/agents"
 link_if_missing "$HOME/stuff/evolve/skills/evolve/SKILL.md" "$skill_dir/evolve/SKILL.md"
 link_if_missing "$HOME/work/archify/archify" "$skill_dir/archify"
-link_if_missing "$HOME/.claude/skills/atlassian-curl" "$skill_dir/atlassian-curl"
 
 if [[ ! -d "$HOME/work/pstack/skills/poteto-mode/scripts/node_modules" ]]; then
     (
@@ -174,7 +167,7 @@ plugin_installed() {
 }
 
 if ! marketplace_installed imoten-local; then
-    codex plugin marketplace add "$HOME/work/pstack" --json >/dev/null
+    codex plugin marketplace add https://github.com/9710willy/imoten.git --json >/dev/null
 fi
 if ! plugin_installed imoten; then
     codex plugin add imoten@imoten-local --json >/dev/null
@@ -194,55 +187,5 @@ if ! plugin_installed ponytail; then
     codex plugin add ponytail@ponytail --json >/dev/null
 fi
 
-claude_command=$(command -v claude 2>/dev/null || true)
-if [[ -z "$claude_command" && -x "$HOME/.local/bin/claude" ]]; then
-    claude_command="$HOME/.local/bin/claude"
-fi
-if [[ -n "$claude_command" ]]; then
-    claude_marketplaces=$("$claude_command" plugin marketplace list --json)
-    claude_plugins=$("$claude_command" plugin list --json)
-
-    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "willee-imoten")' >/dev/null; then
-        "$claude_command" plugin marketplace add "$HOME/work/pstack"
-    fi
-    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "imoten@willee-imoten")' >/dev/null; then
-        "$claude_command" plugin install imoten@willee-imoten --scope user --yes
-    fi
-
-    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "evolve")' >/dev/null; then
-        "$claude_command" plugin marketplace add "$HOME/stuff/evolve"
-    fi
-    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "evolve@evolve")' >/dev/null; then
-        "$claude_command" plugin install evolve@evolve --scope user --yes
-    fi
-
-    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "ponytail")' >/dev/null; then
-        "$claude_command" plugin marketplace add DietrichGebert/ponytail
-    fi
-    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "ponytail@ponytail")' >/dev/null; then
-        "$claude_command" plugin install ponytail@ponytail --scope user --yes
-    fi
-
-    claude_settings="$HOME/.claude/settings.json"
-    claude_settings_tmp=$(mktemp)
-    mkdir -p "$HOME/.claude"
-    [[ -f "$claude_settings" ]] || printf '{}\n' > "$claude_settings"
-    jq --arg command "python3 $HOME/work/naru/hook_spill.py" '
-        .hooks //= {} |
-        .hooks.PostToolUse //= [] |
-        if any(.hooks.PostToolUse[]?;
-            .matcher == "Bash|Read" and
-            any(.hooks[]?; .command == $command)
-        ) then .
-        else .hooks.PostToolUse += [{
-            matcher: "Bash|Read",
-            hooks: [{type: "command", command: $command}]
-        }]
-        end
-    ' "$claude_settings" > "$claude_settings_tmp"
-    chmod 600 "$claude_settings_tmp"
-    mv "$claude_settings_tmp" "$claude_settings"
-fi
-
-echo "Installed development repositories, commands, skills, agent plugins, and hooks"
+echo "Installed development repositories, commands, skills, and Codex plugins"
 {{ end -}}

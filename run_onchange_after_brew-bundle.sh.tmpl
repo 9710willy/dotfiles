@@ -7,4 +7,9 @@
 
 echo "Installing Homebrew packages for {{ .machine.context }} machine..."
 brew bundle --file="{{ .chezmoi.homeDir }}/Brewfile"
+
+{{- if eq .codex.provider "copilot" }}
+# Homebrew refuses service commands inside tmux.
+env -u TMUX brew services restart sleepwatcher
+{{- end }}
 {{ end -}}

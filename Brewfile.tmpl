@@ -2,11 +2,6 @@
 # Machine context: {{ .machine.context }}
 
 # =============================================================================
-# Taps
-# =============================================================================
-tap "fsouza/prettierd"
-
-# =============================================================================
 # Core Tools (all machines)
 # =============================================================================
 brew "chezmoi"
@@ -27,7 +22,6 @@ brew "git-delta"
 # Search & navigation
 brew "ripgrep"
 brew "fd"
-brew "tree"
 brew "ast-grep"  # structural (syntax-aware) search and rewrite, not regex
 
 # Useful CLI tools
@@ -45,9 +39,7 @@ brew "ruff"      # Python lint + format, one fast binary
 # =============================================================================
 
 # Language servers & formatters
-brew "ltex-ls-plus"  # maintained LTeX fork; ltex-ls is deprecated upstream
 brew "lua-language-server"
-brew "marksman"
 brew "prettierd"
 brew "selene"
 brew "yaml-language-server"
@@ -96,6 +88,9 @@ brew "mysql"
 brew "nginx"
 brew "pam-u2f"
 brew "ykman"
+{{- if eq .codex.provider "copilot" }}
+brew "sleepwatcher"
+{{- end }}
 cask "firefox"
 cask "gcloud-cli"
 cask "kiwix"

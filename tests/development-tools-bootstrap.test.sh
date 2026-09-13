@@ -8,12 +8,10 @@ trap 'rm -rf "$root"' EXIT
 home_dir="$root/home"
 bin_dir="$root/bin"
 mkdir -p "$home_dir/.config" "$home_dir/.local/bin" "$home_dir/.codex/skills" \
-    "$home_dir/.claude/skills/atlassian-curl" "$home_dir/bin" "$bin_dir"
+    "$home_dir/bin" "$bin_dir"
 
 cp dot_config/dev-repos.tsv "$home_dir/.config/dev-repos.tsv"
 printf '%s\n' old > "$home_dir/.local/bin/naru"
-printf '%s\n' '{}' > "$home_dir/.claude/settings.json"
-printf '%s\n' skill > "$home_dir/.claude/skills/atlassian-curl/SKILL.md"
 
 for repo_path in \
     work/pstack \
@@ -67,7 +65,7 @@ printf '%s\n' 'Comment prompt.' > "$home_dir/work/pstack/skills/no-comments/refe
 
 cat > "$bin_dir/gh" <<'EOF'
 #!/bin/bash
-[[ "$1 $2" == "auth status" ]]
+[[ "$1 $2" != "auth status" ]]
 EOF
 
 cat > "$bin_dir/codex" <<'EOF'
@@ -76,15 +74,6 @@ case "$1 $2 $3" in
     "plugin marketplace list") printf '%s\n' '{"marketplaces":[]}' ;;
     "plugin list --json") printf '%s\n' '{"installed":[]}' ;;
     *) printf 'codex %s\n' "$*" >> "$COMMAND_LOG" ;;
-esac
-EOF
-
-cat > "$bin_dir/claude" <<'EOF'
-#!/bin/bash
-case "$1 $2 $3" in
-    "plugin marketplace list") printf '%s\n' '[]' ;;
-    "plugin list --json") printf '%s\n' '[]' ;;
-    *) printf 'claude %s\n' "$*" >> "$COMMAND_LOG" ;;
 esac
 EOF
 
@@ -103,7 +92,7 @@ cat > "$home_dir/bin/update-deepseek-catalog" <<'EOF'
 touch "$HOME/.codex/models.json"
 EOF
 
-for command_name in gh codex claude ripwire mise; do
+for command_name in gh codex ripwire mise; do
     chmod +x "$bin_dir/$command_name"
 done
 chmod +x "$home_dir/bin/update-deepseek-catalog"
@@ -126,15 +115,8 @@ COMMAND_LOG="$root/commands.log" HOME="$home_dir" PATH="$test_path" \
 grep -q '^model = "deepseek-flash"$' "$home_dir/.codex/agents/imoten-poteto-agent.toml"
 grep -q '^model_reasoning_effort = "high"$' "$home_dir/.codex/agents/imoten-comment-sicko.toml"
 
-jq -e --arg command "python3 $home_dir/work/naru/hook_spill.py" '
-    [.hooks.PostToolUse[]? |
-        select(.matcher == "Bash|Read" and any(.hooks[]?; .command == $command))] |
-    length == 1
-' "$home_dir/.claude/settings.json" >/dev/null
-
+grep -q 'codex plugin marketplace add https://github.com/9710willy/imoten.git --json' "$root/commands.log"
 grep -q 'codex plugin add imoten@imoten-local' "$root/commands.log"
 grep -q 'codex plugin add naru-codex@naru' "$root/commands.log"
-grep -q 'claude plugin install imoten@willee-imoten --scope user --yes' "$root/commands.log"
-grep -q 'claude plugin install evolve@evolve --scope user --yes' "$root/commands.log"
 
 echo "development tool bootstrap passed"

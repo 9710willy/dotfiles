@@ -110,10 +110,8 @@ fi
 
 # Duplicate-codex sweep.
 #
-# The Claude Code hook (~/.claude/hooks/guard-global-npm.sh) only inspects
-# commands Claude runs. A duplicate can still arrive from a shell you typed in,
-# a script, an editor terminal, or a tool that re-runs a global install - so this
-# catches what the hook structurally cannot see.
+# A duplicate can arrive from a shell, script, editor terminal, or tool that
+# re-runs a global install. This sweep removes those stale copies.
 #
 # Background: ~/work/mise.toml pins node 20, and mise puts node 20's bin first on
 # PATH inside that tree, so a global install from there lands in node 20's prefix
@@ -158,7 +156,7 @@ fi
 # reapply fails, restart anyway - running unpatched beats not running - and
 # leave a loud line so the failure is visible in this log.
 dist="$HOME/.local/opt/copilot-api/node_modules/@jeffreycao/copilot-api/dist"
-bundle="$(ls "$dist"/server-*.js 2>/dev/null | grep -v '\.map$' | head -1 || true)"
+bundle="$(compgen -G "$dist/server-*.js" | head -1 || true)"
 if [ -n "$bundle" ] && ! grep -q "LOCAL PATCH" "$bundle"; then
   echo "$(date '+%Y-%m-%dT%H:%M:%S') server bundle is UNPATCHED ($bundle) - running reapply-patches.sh"
   if "$HOME/.local/share/copilot-api/reapply-patches.sh"; then
