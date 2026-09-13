@@ -1,5 +1,4 @@
 vim.pack.add(require("packages"), { confirm = false, load = true })
-vim.cmd.packadd("matchit")
 
 local map = vim.keymap.set
 
@@ -200,7 +199,6 @@ require("nvim-dap-virtual-text").setup({})
 require("cmake-tools").setup({ cmake_always_use_terminal = true })
 require("settings.gitsigns")
 require("settings.neogit")
-require("git-conflict").setup({})
 
 map("n", "<leader>rs", "<cmd>IronRepl<cr>", { desc = "Open Iron REPL" })
 map("n", "<leader>rr", "<cmd>IronRestart<cr>", { desc = "Restart Iron REPL" })
@@ -247,7 +245,7 @@ lint.linters_by_ft = {
 	vim = { "vint" },
 }
 local lint_group = vim.api.nvim_create_augroup("nvim_lint", { clear = true })
-vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
+vim.api.nvim_create_autocmd("BufWritePost", {
 	group = lint_group,
 	callback = function()
 		lint.try_lint()
@@ -339,17 +337,3 @@ end, { desc = "Debug print" })
 map("n", "<leader>rc", function()
 	refactoring.debug.cleanup({})
 end, { desc = "Debug cleanup" })
-
-local harpoon = require("harpoon")
-harpoon:setup()
-map("n", "<leader>a", function()
-	harpoon:list():add()
-end, { desc = "Harpoon add" })
-map("n", "<leader>h", function()
-	harpoon.ui:toggle_quick_menu(harpoon:list())
-end, { desc = "Harpoon menu" })
-for index = 1, 4 do
-	map("n", "<leader>" .. index, function()
-		harpoon:list():select(index)
-	end, { desc = "Harpoon " .. index })
-end

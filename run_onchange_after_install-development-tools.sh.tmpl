@@ -1,0 +1,248 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Repository list: {{ include "dot_config/dev-repos.tsv" | sha256sum }}
+# Installer revision: 1
+
+set -euo pipefail
+
+repos_file="$HOME/.config/dev-repos.tsv"
+bin_dir="$HOME/.local/bin"
+skill_dir="$HOME/.codex/skills"
+
+for command_name in gh git jq codex curl mise; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        echo "Development tool setup needs $command_name on PATH" >&2
+        exit 1
+    fi
+done
+
+if [[ ! -r "$repos_file" ]]; then
+    echo "Development repository list not found: $repos_file" >&2
+    exit 1
+fi
+
+if ! gh auth status >/dev/null 2>&1; then
+    echo "GitHub login is required for the private development repositories." >&2
+    echo "Run: gh auth login" >&2
+    echo "Then run: chezmoi apply" >&2
+    exit 1
+fi
+
+mkdir -p "$HOME/work" "$HOME/stuff" "$bin_dir" "$skill_dir"
+
+mise install --yes
+
+if ! command -v claude >/dev/null 2>&1 && [[ ! -x "$HOME/.local/bin/claude" ]]; then
+    claude_installer=$(mktemp)
+    trap 'rm -f "$claude_installer"' EXIT
+    curl -fsSL https://claude.ai/install.sh -o "$claude_installer"
+    bash "$claude_installer"
+    rm -f "$claude_installer"
+    trap - EXIT
+fi
+
+{{- if eq .codex.provider "deepseek" }}
+"$HOME/bin/update-deepseek-catalog"
+{{- end }}
+
+while IFS='|' read -r directory repository _push_policy; do
+    [[ -z "$directory" || "$directory" == \#* ]] && continue
+    [[ "$directory" == "@chezmoi" ]] && continue
+    repo_path="$HOME/$directory"
+
+    if [[ -d "$repo_path/.git" ]]; then
+        echo "$directory is already cloned"
+    elif [[ -e "$repo_path" ]]; then
+        echo "Cannot clone $repository because $repo_path exists and is not a Git repository" >&2
+        exit 1
+    else
+        gh repo clone "$repository" "$repo_path"
+    fi
+done < "$repos_file"
+
+link_if_missing() {
+    local target="$1"
+    local link="$2"
+    local backup="${link}.before-dev-sync"
+
+    if [[ ! -e "$target" ]]; then
+        echo "Cannot link missing target: $target" >&2
+        exit 1
+    fi
+    if [[ -L "$link" ]]; then
+        ln -sfn "$target" "$link"
+    elif [[ -e "$link" ]]; then
+        if [[ -e "$backup" ]]; then
+            echo "Cannot link $link because both it and $backup exist" >&2
+            exit 1
+        fi
+        mv "$link" "$backup"
+        ln -s "$target" "$link"
+        echo "Moved the previous path to $backup"
+    else
+        ln -s "$target" "$link"
+    fi
+}
+
+link_if_missing "$HOME/work/naru/naru.py" "$bin_dir/naru"
+link_if_missing "$HOME/work/teio-tui/teio.mjs" "$bin_dir/teio"
+link_if_missing "$HOME/work/yeon/bin/yeon.mjs" "$bin_dir/yeon"
+link_if_missing "$HOME/work/archify/archify/bin/archify.mjs" "$bin_dir/archify"
+
+link_if_missing "$HOME/work/yeon/skills/yeon" "$skill_dir/yeon"
+mkdir -p "$skill_dir/evolve/agents"
+link_if_missing "$HOME/stuff/evolve/skills/evolve/SKILL.md" "$skill_dir/evolve/SKILL.md"
+link_if_missing "$HOME/work/archify/archify" "$skill_dir/archify"
+link_if_missing "$HOME/.claude/skills/atlassian-curl" "$skill_dir/atlassian-curl"
+
+if [[ ! -d "$HOME/work/pstack/skills/poteto-mode/scripts/node_modules" ]]; then
+    (
+        cd "$HOME/work/pstack/skills/poteto-mode/scripts"
+        mise exec -- bun install --frozen-lockfile
+    )
+fi
+
+if [[ ! -d "$HOME/work/archify/archify/node_modules" ]]; then
+    (
+        cd "$HOME/work/archify/archify"
+        mise exec -- npm ci
+    )
+fi
+
+{{- if eq .codex.provider "deepseek" }}
+python3 - "$HOME/work/pstack" "$HOME/.codex/agents" <<'PY'
+import pathlib
+import sys
+
+plugin_root = pathlib.Path(sys.argv[1])
+agents_dir = pathlib.Path(sys.argv[2])
+roles = (
+    (
+        "imoten-poteto-agent",
+        "templates/codex-agents/imoten-poteto-agent.toml",
+        "skills/poteto-mode/references/poteto-agent-prompt.md",
+    ),
+    (
+        "imoten-comment-sicko",
+        "templates/codex-agents/imoten-comment-sicko.toml",
+        "skills/no-comments/references/comment-sicko-prompt.md",
+    ),
+)
+
+agents_dir.mkdir(parents=True, exist_ok=True)
+for name, template_name, prompt_name in roles:
+    destination = agents_dir / f"{name}.toml"
+    if destination.exists():
+        print(f"Keeping existing agent profile: {destination}")
+        continue
+    template = (plugin_root / template_name).read_text()
+    prompt = (plugin_root / prompt_name).read_text().strip()
+    model_placeholder = "{" + "{MODEL_CONFIG}" + "}"
+    prompt_placeholder = "{" + "{PROMPT}" + "}"
+    content = template.replace(
+        model_placeholder,
+        'model = "deepseek-flash"\nmodel_reasoning_effort = "high"',
+    ).replace(prompt_placeholder, prompt)
+    destination.write_text(content.rstrip() + "\n")
+    destination.chmod(0o600)
+PY
+{{- end }}
+
+if ! ripwire --version 2>/dev/null | grep -q '^ripwire 0\.5\.0 '; then
+    ripwire_installer=$(mktemp)
+    trap 'rm -f "$ripwire_installer"' EXIT
+    curl -fsSL \
+        https://raw.githubusercontent.com/redhat-et/ripwire/v0.5.0/scripts/install.sh \
+        -o "$ripwire_installer"
+    RIPWIRE_REPO=redhat-et/ripwire \
+        RIPWIRE_VERSION=v0.5.0 \
+        RIPWIRE_INSTALL_YES=1 \
+        bash "$ripwire_installer"
+    rm -f "$ripwire_installer"
+    trap - EXIT
+fi
+
+marketplace_installed() {
+    codex plugin marketplace list --json |
+        jq -e --arg name "$1" '.marketplaces[]? | select(.name == $name)' >/dev/null
+}
+
+plugin_installed() {
+    codex plugin list --json |
+        jq -e --arg name "$1" '.installed[]? | select(.name == $name and .installed == true)' >/dev/null
+}
+
+if ! marketplace_installed imoten-local; then
+    codex plugin marketplace add "$HOME/work/pstack" --json >/dev/null
+fi
+if ! plugin_installed imoten; then
+    codex plugin add imoten@imoten-local --json >/dev/null
+fi
+
+if ! marketplace_installed naru; then
+    codex plugin marketplace add "$HOME/work/naru/codex" --json >/dev/null
+fi
+if ! plugin_installed naru-codex; then
+    codex plugin add naru-codex@naru --json >/dev/null
+fi
+
+if ! marketplace_installed ponytail; then
+    codex plugin marketplace add DietrichGebert/ponytail --json >/dev/null
+fi
+if ! plugin_installed ponytail; then
+    codex plugin add ponytail@ponytail --json >/dev/null
+fi
+
+claude_command=$(command -v claude 2>/dev/null || true)
+if [[ -z "$claude_command" && -x "$HOME/.local/bin/claude" ]]; then
+    claude_command="$HOME/.local/bin/claude"
+fi
+if [[ -n "$claude_command" ]]; then
+    claude_marketplaces=$("$claude_command" plugin marketplace list --json)
+    claude_plugins=$("$claude_command" plugin list --json)
+
+    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "willee-imoten")' >/dev/null; then
+        "$claude_command" plugin marketplace add "$HOME/work/pstack"
+    fi
+    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "imoten@willee-imoten")' >/dev/null; then
+        "$claude_command" plugin install imoten@willee-imoten --scope user --yes
+    fi
+
+    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "evolve")' >/dev/null; then
+        "$claude_command" plugin marketplace add "$HOME/stuff/evolve"
+    fi
+    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "evolve@evolve")' >/dev/null; then
+        "$claude_command" plugin install evolve@evolve --scope user --yes
+    fi
+
+    if ! printf '%s' "$claude_marketplaces" | jq -e '.[]? | select(.name == "ponytail")' >/dev/null; then
+        "$claude_command" plugin marketplace add DietrichGebert/ponytail
+    fi
+    if ! printf '%s' "$claude_plugins" | jq -e '.[]? | select(.id == "ponytail@ponytail")' >/dev/null; then
+        "$claude_command" plugin install ponytail@ponytail --scope user --yes
+    fi
+
+    claude_settings="$HOME/.claude/settings.json"
+    claude_settings_tmp=$(mktemp)
+    mkdir -p "$HOME/.claude"
+    [[ -f "$claude_settings" ]] || printf '{}\n' > "$claude_settings"
+    jq --arg command "python3 $HOME/work/naru/hook_spill.py" '
+        .hooks //= {} |
+        .hooks.PostToolUse //= [] |
+        if any(.hooks.PostToolUse[]?;
+            .matcher == "Bash|Read" and
+            any(.hooks[]?; .command == $command)
+        ) then .
+        else .hooks.PostToolUse += [{
+            matcher: "Bash|Read",
+            hooks: [{type: "command", command: $command}]
+        }]
+        end
+    ' "$claude_settings" > "$claude_settings_tmp"
+    chmod 600 "$claude_settings_tmp"
+    mv "$claude_settings_tmp" "$claude_settings"
+fi
+
+echo "Installed development repositories, commands, skills, agent plugins, and hooks"
+{{ end -}}

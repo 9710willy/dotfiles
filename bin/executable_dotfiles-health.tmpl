@@ -51,7 +51,6 @@ check "git installed" "command -v git"
 echo ""
 echo "Shell:"
 check "zsh is default shell" "[[ \$SHELL == */zsh ]]"
-check "powerlevel10k installed" "[[ -d ~/powerlevel10k ]]"
 check "zsh plugins installed" "[[ -d ~/.oh-my-zsh/custom/plugins/fast-syntax-highlighting ]]"
 
 echo ""
@@ -76,14 +75,50 @@ echo "Development:"
 check "docker installed" "command -v docker"
 check "gh (GitHub CLI) installed" "command -v gh"
 check "jq installed" "command -v jq"
+check "naru installed" "command -v naru"
+check "teio installed" "command -v teio"
+check "yeon installed" "command -v yeon"
+check "ripwire installed" "command -v ripwire"
+check "archify installed" "command -v archify"
+
+echo ""
+echo "Development Repositories:"
+while IFS='|' read -r directory _repository _push_policy; do
+    [[ -z "$directory" || "$directory" == \#* ]] && continue
+    if [[ "$directory" == "@chezmoi" ]]; then
+        check "dotfiles source is a Git repository" "[[ -d \"$(chezmoi source-path)/.git\" ]]"
+    else
+        check "$directory cloned" "[[ -d \"$HOME/$directory/.git\" ]]"
+    fi
+done < "$HOME/.config/dev-repos.tsv"
 
 echo ""
 echo "Codex:"
 check "Codex installed" "command -v codex"
+check "Claude Code installed" "command -v claude"
 check "Codex config loads" "(set +o pipefail; codex doctor --json 2>/dev/null | jq -e '.checks[\"config.load\"].status == \"ok\"')"
 check "Imoten plugin installed" "codex plugin list --json | jq -e '.installed[] | select(.name == \"imoten\" and .installed == true)'"
+check "Naru plugin installed" "codex plugin list --json | jq -e '.installed[] | select(.name == \"naru-codex\" and .installed == true)'"
+check "Ponytail plugin installed" "codex plugin list --json | jq -e '.installed[] | select(.name == \"ponytail\" and .installed == true)'"
+{{- if eq .codex.provider "deepseek" }}
+check "Poteto agent profile installed" "grep -q '^model = \"deepseek-flash\"$' ~/.codex/agents/imoten-poteto-agent.toml"
+check "Comment auditor profile installed" "grep -q '^model = \"deepseek-flash\"$' ~/.codex/agents/imoten-comment-sicko.toml"
+{{- end }}
+check "Yeon skill installed" "[[ -f ~/.codex/skills/yeon/SKILL.md ]]"
+check "Evolve skill installed" "[[ -f ~/.codex/skills/evolve/SKILL.md ]]"
+check "Archify skill installed" "[[ -f ~/.codex/skills/archify/SKILL.md ]]"
+check "Atlassian skill installed" "[[ -f ~/.codex/skills/atlassian-curl/SKILL.md ]]"
+check "Codex global instructions installed" "[[ -f ~/.codex/AGENTS.md ]]"
+check "Claude global instructions installed" "[[ -f ~/.claude/CLAUDE.md ]]"
+check "Ponytail default mode is off" "jq -e '.defaultMode == \"off\"' ~/.config/ponytail/config.json"
+check "Teio config exists" "[[ -f ~/.config/teio/config.json ]]"
+warn "Claude Imoten plugin installed" "claude plugin list --json | jq -e '.[] | select(.id == \"imoten@willee-imoten\")'"
+warn "Claude Evolve plugin installed" "claude plugin list --json | jq -e '.[] | select(.id == \"evolve@evolve\")'"
+warn "Claude Ponytail plugin installed" "claude plugin list --json | jq -e '.[] | select(.id == \"ponytail@ponytail\")'"
+check "Claude Naru hook installed" "jq -e --arg command \"python3 $HOME/work/naru/hook_spill.py\" 'any(.hooks.PostToolUse[]?; .matcher == \"Bash|Read\" and any(.hooks[]?; .command == \$command))' ~/.claude/settings.json"
 {{- if eq .codex.provider "deepseek" }}
 check "DeepSeek API key set" "[[ -n \${DEEPSEEK_API_KEY:-} ]]"
+check "DeepSeek model catalog installed" "jq -e '.models[] | select(.slug == \"deepseek-flash\")' ~/.codex/models.json"
 {{- else }}
 check "Copilot API key set" "[[ -n \${COPILOT_API_KEY:-} ]]"
 {{- end }}

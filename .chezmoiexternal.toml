@@ -3,11 +3,6 @@
     url = "https://github.com/tmux-plugins/tpm.git"
     refreshPeriod = "168h"
 
-["powerlevel10k"]
-    type = "git-repo"
-    url = "https://github.com/romkatv/powerlevel10k.git"
-    refreshPeriod = "168h"
-
 [".oh-my-zsh/custom/plugins/fast-syntax-highlighting"]
     type = "git-repo"
     url = "https://github.com/zdharma-continuum/fast-syntax-highlighting.git"

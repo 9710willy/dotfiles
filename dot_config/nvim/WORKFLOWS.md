@@ -36,10 +36,6 @@ Use `<leader>e` to open netrw, Neovim's file explorer.
 - `<C-Left>` and `<C-Right>` move between tabs.
 - `<C-Space>` grows the Tree-sitter selection.
 - `<BS>` shrinks the Tree-sitter selection.
-- `<leader>a` adds the current file to Harpoon.
-- `<leader>h` opens the Harpoon menu.
-- `<leader>1` through `<leader>4` open Harpoon entries.
-
 Mini AI provides text objects. Vim Wordmotion makes `w`, `b`, and `e` stop inside
 camel case and snake case words.
 
@@ -59,6 +55,7 @@ Neovim provides the LSP keys and completion UI.
 - `K` shows hover help.
 
 The aliases `<leader>rn` and `gA` also rename and run code actions.
+Use `:LspStopAll` before local inference to stop every active language server.
 
 In insert mode:
 
@@ -92,9 +89,9 @@ Tree-sitter provides folds. Use standard fold keys such as `za`, `zc`, `zo`,
 - `<leader>hr` resets a hunk.
 - `<leader>hp` previews a hunk.
 - `<leader>gb` toggles line blame.
+- `<leader>hd` opens the current buffer in native diff mode.
 - `<leader>gy` copies a link to the current line or selection.
 - `<leader>gY` opens that link.
-- `:DiffviewOpen` opens the diff view.
 
 ## Run code
 

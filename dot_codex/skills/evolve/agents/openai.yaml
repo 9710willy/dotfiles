@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evolve"
+  short_description: "Run an explicit two-draft writing workshop"
+  default_prompt: "Use $evolve to compare two drafts, then refine the one I select."
+policy:
+  allow_implicit_invocation: false

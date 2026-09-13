@@ -8,7 +8,6 @@ return {
 	github .. "folke/flash.nvim",
 	github .. "chaoren/vim-wordmotion",
 	github .. "neovim/nvim-lspconfig",
-	github .. "barreiroleo/ltex_extra.nvim",
 	github .. "b0o/schemastore.nvim",
 	{ src = github .. "nvim-treesitter/nvim-treesitter", version = "main" },
 	github .. "windwp/nvim-ts-autotag",
@@ -20,8 +19,6 @@ return {
 	github .. "Civitasv/cmake-tools.nvim",
 	github .. "lewis6991/gitsigns.nvim",
 	{ src = github .. "NeogitOrg/neogit", version = "master" },
-	github .. "sindrets/diffview.nvim",
-	github .. "akinsho/git-conflict.nvim",
 	github .. "vigemus/iron.nvim",
 	github .. "mfussenegger/nvim-lint",
 	github .. "stevearc/conform.nvim",
@@ -31,5 +28,4 @@ return {
 	github .. "linrongbin16/gitlinker.nvim",
 	github .. "lewis6991/async.nvim",
 	github .. "ThePrimeagen/refactoring.nvim",
-	{ src = github .. "ThePrimeagen/harpoon", version = "harpoon2" },
 }

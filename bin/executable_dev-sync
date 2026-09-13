@@ -1,0 +1,118 @@
+#!/bin/bash
+set -u
+
+mode="${1:-status}"
+repos_file="${DEV_REPOS_FILE:-$HOME/.config/dev-repos.tsv}"
+work_root="${DEV_WORK_ROOT:-$HOME/work}"
+home_root="${DEV_HOME_ROOT:-$HOME}"
+failed=0
+
+case "$mode" in
+    status|pull|push|refresh) ;;
+    *)
+        echo "Usage: dev-sync [status|pull|push|refresh]" >&2
+        exit 2
+        ;;
+esac
+
+if [[ "$mode" == "refresh" ]]; then
+    if ! command -v codex >/dev/null 2>&1; then
+        echo "dev-sync: codex is not on PATH" >&2
+        exit 1
+    fi
+
+    echo "Refreshing plugins. Restart Codex after this command."
+    if grep -q '^model_provider = "deepseek"$' "$HOME/.codex/config.toml" 2>/dev/null; then
+        update-deepseek-catalog || exit 1
+    fi
+    codex plugin marketplace upgrade ponytail || exit 1
+    for plugin in imoten@imoten-local naru-codex@naru ponytail@ponytail; do
+        codex plugin remove "$plugin" || exit 1
+        codex plugin add "$plugin" || exit 1
+    done
+    if command -v claude >/dev/null 2>&1; then
+        claude plugin marketplace update || exit 1
+        claude_plugins=$(claude plugin list --json) || exit 1
+        for plugin in imoten@willee-imoten evolve@evolve ponytail@ponytail; do
+            if printf '%s' "$claude_plugins" | jq -e --arg plugin "$plugin" '.[]? | select(.id == $plugin)' >/dev/null; then
+                claude plugin update "$plugin" --scope user --yes || exit 1
+            fi
+        done
+    fi
+    exit 0
+fi
+
+if [[ ! -r "$repos_file" ]]; then
+    echo "dev-sync: repository list not found: $repos_file" >&2
+    exit 1
+fi
+
+manifest_file=$(mktemp)
+trap 'rm -f "$manifest_file"' EXIT
+cp "$repos_file" "$manifest_file"
+
+repo_path_for() {
+    if [[ "$1" == "@chezmoi" ]]; then
+        chezmoi source-path
+    elif [[ "$1" == */* ]]; then
+        printf '%s\n' "$home_root/$1"
+    else
+        printf '%s\n' "$work_root/$1"
+    fi
+}
+
+if [[ "$mode" == "pull" || "$mode" == "push" ]]; then
+    while IFS='|' read -r directory _repository push_policy; do
+        [[ -z "$directory" || "$directory" == \#* ]] && continue
+        repo_path=$(repo_path_for "$directory")
+
+        if [[ ! -d "$repo_path/.git" ]]; then
+            echo "$directory: missing at $repo_path" >&2
+            failed=1
+            continue
+        fi
+        if [[ "$mode" == "push" && "$push_policy" != "write" ]]; then
+            continue
+        fi
+        if [[ -n "$(git -C "$repo_path" status --porcelain --untracked-files=no)" ]]; then
+            echo "$directory: commit or stash changes before $mode" >&2
+            failed=1
+        fi
+    done < "$manifest_file"
+
+    [[ "$failed" -eq 0 ]] || exit "$failed"
+fi
+
+while IFS='|' read -r directory _repository push_policy; do
+    [[ -z "$directory" || "$directory" == \#* ]] && continue
+    repo_path=$(repo_path_for "$directory")
+
+    if [[ ! -d "$repo_path/.git" ]]; then
+        echo "$directory: missing at $repo_path" >&2
+        failed=1
+        continue
+    fi
+
+    case "$mode" in
+        status)
+            echo "[$directory]"
+            git -C "$repo_path" status --short --branch || failed=1
+            ;;
+        pull)
+            git -C "$repo_path" pull --ff-only || failed=1
+            ;;
+        push)
+            if [[ "$push_policy" != "write" ]]; then
+                echo "$directory: read-only source, skipped push"
+                continue
+            fi
+            git -C "$repo_path" push || failed=1
+            ;;
+    esac
+done < "$manifest_file"
+
+if [[ "$mode" == "pull" && "$failed" -eq 0 ]]; then
+    chezmoi apply || failed=1
+fi
+
+exit "$failed"

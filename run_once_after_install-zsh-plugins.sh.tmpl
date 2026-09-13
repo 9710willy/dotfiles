@@ -1,12 +1,6 @@
 {{- if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
-# Install Powerlevel10k
-if [[ ! -d "$HOME/powerlevel10k" ]]; then
-    echo "Installing Powerlevel10k..."
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/powerlevel10k"
-fi
-
 # Create oh-my-zsh custom plugins directory
 ZSH_PLUGINS="$HOME/.oh-my-zsh/custom/plugins"
 mkdir -p "$ZSH_PLUGINS"

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+db="${NARU_DB:-$HOME/.naru/log.db}"
+[[ -r "$db" ]] || exit 0
+
+pending=$(sqlite3 "$db" \
+  "SELECT COUNT(*) FROM conversation_history WHERE kind IN ('claim','skill') AND promoted=0" \
+  2>/dev/null) || exit 0
+
+if ((pending > 0)); then
+  printf '#[fg=colour214,bold]✉%d#[fg=black,nobold] | ' "$pending"
+else
+  printf '#[fg=colour244]📭#[fg=black] | '
+fi

@@ -75,6 +75,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	end,
 })
 
+vim.api.nvim_create_user_command("LspStopAll", function()
+	local clients = vim.lsp.get_clients()
+	for _, client in ipairs(clients) do
+		client:stop()
+	end
+	vim.notify(("Stopped %d LSP client(s)"):format(#clients))
+end, { desc = "Stop all LSP clients" })
+
 vim.lsp.enable({
 	"bashls",
 	"clangd",
@@ -85,7 +93,6 @@ vim.lsp.enable({
 	"html",
 	"jsonls",
 	"julials",
-	"marksman",
 	"ocamllsp",
 	"pyright",
 	"ruff",
@@ -93,7 +100,6 @@ vim.lsp.enable({
 	"lua_ls",
 	"tailwindcss",
 	"texlab",
-	"ltex_plus",
 	"vtsls",
 	"vimls",
 	"yamlls",

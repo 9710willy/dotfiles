@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+codex_dir="$HOME/.codex"
+models_path="$codex_dir/models.json"
+installer=$(mktemp)
+models_tmp=$(mktemp)
+trap 'rm -f "$installer" "$models_tmp"' EXIT
+
+curl -fsSL \
+    https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh \
+    -o "$installer"
+
+awk '
+    /^  cat > "\$1" <<'\''CODEX_MODELS_JSON'\''$/ { copying=1; next }
+    copying && /^CODEX_MODELS_JSON$/ { copying=0; exit }
+    copying { print }
+' "$installer" > "$models_tmp"
+
+python3 - "$models_tmp" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    catalog = json.load(source)
+
+slugs = {model.get("slug") for model in catalog.get("models", [])}
+if slugs != {"deepseek-flash", "deepseek-v4-pro"}:
+    raise SystemExit(f"unexpected DeepSeek model catalog: {sorted(slugs)}")
+PY
+
+mkdir -p "$codex_dir"
+chmod 700 "$codex_dir"
+chmod 600 "$models_tmp"
+mv "$models_tmp" "$models_path"
+
+echo "Installed the official DeepSeek Codex model catalog"

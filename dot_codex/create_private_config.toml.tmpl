@@ -10,6 +10,7 @@ model_reasoning_effort = "high"
 model_reasoning_summary = "auto"
 approvals_reviewer = "auto_review"
 web_search = "disabled"
+model_catalog_json = "~/.codex/models.json"
 notify = ["{{ .chezmoi.homeDir }}/.codex/notify.sh"]
 
 [model_providers.deepseek]
@@ -18,6 +19,7 @@ base_url = "https://api.deepseek.com"
 env_key = "DEEPSEEK_API_KEY"
 env_key_instructions = "Add DEEPSEEK_API_KEY to ~/.zshrc.local, then start a new shell."
 wire_api = "responses"
+requires_openai_auth = false
 supports_websockets = false
 
 [features]

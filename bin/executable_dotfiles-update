@@ -20,16 +20,12 @@ mise upgrade
 
 echo ""
 echo "→ Updating zsh plugins..."
-for plugin in ~/powerlevel10k ~/.oh-my-zsh/custom/plugins/*; do
+for plugin in ~/.oh-my-zsh/custom/plugins/*; do
     if [[ -d "$plugin/.git" ]]; then
         echo "  Updating $(basename "$plugin")..."
         git -C "$plugin" pull --quiet
     fi
 done
-
-echo ""
-echo "→ Updating neovim plugins..."
-nvim --headless "+Lazy! sync" +qa 2>/dev/null || echo "  (skipped - run manually with :Lazy sync)"
 
 echo ""
 echo "=== Update Complete ==="

@@ -2,10 +2,12 @@
 
 Personal dotfiles managed with [chezmoi](https://www.chezmoi.io/).
 
+See [Set up the other Mac](docs/other-workstation-setup.md) for the DeepSeek workstation procedure.
+
 ## Quick Setup
 
 ```bash
-# One-liner for new Mac. It prompts for machine context and Codex provider.
+# Chezmoi is already installed. This prompts for machine context and Codex provider.
 chezmoi init --apply 9710willy/dotfiles
 ```
 
@@ -20,9 +22,10 @@ chezmoi apply  # Apply changes
 
 - **Neovim** - Full LSP config, completion, telescope, etc.
 - **Tmux** - With vim-tmux-navigator integration
-- **Zsh** - Powerlevel10k prompt, syntax highlighting, autosuggestions
+- **Zsh** - Native prompt, syntax highlighting, autosuggestions
 - **Git** - Identity templated (company vs personal)
 - **mise** - Universal version manager (Node, Python, etc.)
+- **Development tools** - Codex, Claude Code, Imoten, Naru, Teio, Yeon, Evolve, Archify, Ripwire, and Ponytail
 
 ## Machine Context
 
@@ -69,7 +72,7 @@ Then run `chezmoi apply`.
 
 ## Codex with DeepSeek
 
-Select `deepseek` during `chezmoi init`. Chezmoi creates the initial Codex config, then Codex owns later plugin and model entries. Chezmoi installs Codex and Imoten. It keeps the API key in the ignored `~/.zshrc.local` file.
+Select `deepseek` during `chezmoi init`. Chezmoi creates the initial Codex config, then Codex owns later plugin and model entries. Chezmoi installs Codex and the development toolchain. It keeps the API key in the ignored `~/.zshrc.local` file.
 
 ```bash
 touch ~/.zshrc.local
@@ -88,6 +91,8 @@ Start a new shell. Verify the API connection:
 ```bash
 codex exec -m deepseek-flash "Reply with OK."
 ```
+
+Chezmoi extracts `~/.codex/models.json` from DeepSeek's official Codex setup script. It does not copy the API key into the Codex config.
 
 Chezmoi creates `~/.codex/imoten-models.md` once. All Imoten roles use `deepseek-flash` at `high` effort. Do not run `$setup-pstack` on this workstation. That command currently builds its model catalog from `copilot-api`.
 
@@ -117,15 +122,52 @@ On first run, chezmoi will automatically:
 
 1. Install Homebrew (if missing)
 2. Install packages via `brew bundle` (neovim, tmux, LSPs, etc.)
-3. Clone zsh plugins (powerlevel10k, fast-syntax-highlighting, etc.)
-4. Setup fzf key bindings
-5. Install the Imoten Codex plugin if it is not already installed
+3. Run one development-workflow setup script
+4. Install Claude Code when it is missing
+5. Clone the development repositories
+6. Link the commands and skills
+7. Install Ripwire and the Codex and Claude plugins
+8. Install the DeepSeek model catalog and Imoten agent profiles
+9. Merge the Naru hook into Claude Code settings
+
+Private repositories require GitHub CLI authentication. On a new workstation, the first apply installs `gh` and can stop at the authentication gate. Run `gh auth login`, then run `chezmoi apply` again.
+
+## Development repository sync
+
+Chezmoi clones missing repositories. It never changes an existing working tree. The same manifest includes the active Chezmoi source repository.
+
+Check every repository:
+
+```bash
+dev-sync status
+```
+
+Pull clean repositories with fast-forward updates only:
+
+```bash
+dev-sync pull
+```
+
+Push committed changes from writable repositories:
+
+```bash
+dev-sync push
+```
+
+`dev-sync` refuses tracked changes. Commit or stash active work first. Untracked generated files do not block synchronization. Git still refuses an untracked-file collision during pull. Naru databases, Teio state, API keys, and Git credentials remain local to each workstation.
+
+On a DeepSeek workstation, Chezmoi creates an empty Teio config. Add a `deepseek-flash` execution preset before the first Teio coordinator or worker run. This avoids Teio's GPT-specific default preset.
 
 ## Helper Scripts
 
 ```bash
 dotfiles-health    # Validate your setup (check for missing tools)
 dotfiles-update    # Update everything (chezmoi, brew, mise, plugins)
+dev-sync           # Show development repository state
+dev-sync pull      # Pull clean development repositories
+dev-sync push      # Push committed development repositories
+dev-sync refresh   # Refresh Codex plugin caches, then restart Codex
+update-deepseek-catalog  # Refresh DeepSeek's Codex model catalog
 dotfiles-cleanup   # Clean up caches (npm, pip, docker, etc.)
 dotfiles-cleanup --dry-run  # See what would be cleaned
 macos-update       # Run macOS software updates (with Little Snitch reminder)

@@ -1,6 +1,5 @@
 require("neogit").setup({
 	disable_signs = true,
-	integrations = { diffview = true },
 	sections = {
 		untracked = {
 			folded = false,

@@ -6,6 +6,7 @@ auto_install = true
 
 [tools]
 # Default versions (can be overridden per-project with mise.toml)
+bun = "latest"
 java = "temurin-25"
 node = "24"
 "npm:typescript-language-server" = "latest"
