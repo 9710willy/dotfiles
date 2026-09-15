@@ -106,6 +106,7 @@ check "Ponytail plugin installed" "codex plugin list --json | jq -e '.installed[
 {{- if eq .codex.provider "deepseek" }}
 check "Poteto agent profile installed" "grep -q '^model = \"deepseek-flash\"$' ~/.codex/agents/imoten-poteto-agent.toml"
 check "Comment auditor profile installed" "grep -q '^model = \"deepseek-flash\"$' ~/.codex/agents/imoten-comment-sicko.toml"
+check "Imoten agent receipt installed" "jq -e '.owner == \"imoten/setup-pstack\" and .scope == \"user\"' ~/.codex/imoten-agent-receipt.json"
 {{- end }}
 check "Yeon skill installed" "[[ -f ~/.codex/skills/yeon/SKILL.md ]]"
 check "Evolve skill installed" "[[ -f ~/.codex/skills/evolve/SKILL.md ]]"

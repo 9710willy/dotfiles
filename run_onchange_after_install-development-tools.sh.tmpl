@@ -103,45 +103,6 @@ if [[ ! -d "$HOME/work/archify/archify/node_modules" ]]; then
     )
 fi
 
-{{- if eq .codex.provider "deepseek" }}
-python3 - "$HOME/work/pstack" "$HOME/.codex/agents" <<'PY'
-import pathlib
-import sys
-
-plugin_root = pathlib.Path(sys.argv[1])
-agents_dir = pathlib.Path(sys.argv[2])
-roles = (
-    (
-        "imoten-poteto-agent",
-        "templates/codex-agents/imoten-poteto-agent.toml",
-        "skills/poteto-mode/references/poteto-agent-prompt.md",
-    ),
-    (
-        "imoten-comment-sicko",
-        "templates/codex-agents/imoten-comment-sicko.toml",
-        "skills/no-comments/references/comment-sicko-prompt.md",
-    ),
-)
-
-agents_dir.mkdir(parents=True, exist_ok=True)
-for name, template_name, prompt_name in roles:
-    destination = agents_dir / f"{name}.toml"
-    if destination.exists():
-        print(f"Keeping existing agent profile: {destination}")
-        continue
-    template = (plugin_root / template_name).read_text()
-    prompt = (plugin_root / prompt_name).read_text().strip()
-    model_placeholder = "{" + "{MODEL_CONFIG}" + "}"
-    prompt_placeholder = "{" + "{PROMPT}" + "}"
-    content = template.replace(
-        model_placeholder,
-        'model = "deepseek-flash"\nmodel_reasoning_effort = "high"',
-    ).replace(prompt_placeholder, prompt)
-    destination.write_text(content.rstrip() + "\n")
-    destination.chmod(0o600)
-PY
-{{- end }}
-
 if ! ripwire --version 2>/dev/null | grep -q '^ripwire 0\.5\.0 '; then
     ripwire_installer=$(mktemp)
     trap 'rm -f "$ripwire_installer"' EXIT

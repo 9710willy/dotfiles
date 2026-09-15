@@ -105,7 +105,13 @@ codex exec -m deepseek-flash "Reply with OK."
 
 Chezmoi extracts `~/.codex/models.json` from DeepSeek's official Codex setup script. It does not copy the API key into the Codex config.
 
-Chezmoi creates `~/.codex/imoten-models.md` once. All Imoten roles use `deepseek-flash` at `high` effort. Do not run `$setup-pstack` on this workstation. That command currently builds its model catalog from `copilot-api`.
+Chezmoi creates `~/.codex/imoten-models.md` once. All Imoten roles start with `deepseek-flash` at `high` effort. After you set the API key, enter this prompt in Codex:
+
+```text
+$setup-pstack install agents for user scope.
+```
+
+Imoten verifies DeepSeek, writes its owned role map and agent profiles, and installs the local operator. If an older Chezmoi install already wrote the profiles, use the migration step in [Set up the other Mac](docs/other-workstation-setup.md#6-test-imoten).
 
 Direct DeepSeek does not provide the multi-vendor review panel available through `copilot-api`. Workflows that require different model vendors stop and report that limit. Other Codex and Imoten workflows use DeepSeek directly.
 
@@ -121,7 +127,7 @@ This setup uses **mise** (not nvm/pyenv) for Node.js, Python, etc.
 
 ```bash
 # Global defaults (in ~/.config/mise/config.toml)
-mise use --global node@20 python@3.12
+mise use --global node@24 python@3.12
 
 # Per-project (creates mise.toml in project dir)
 mise use node@18
@@ -137,7 +143,7 @@ On first run, chezmoi will automatically:
 4. Clone the development repositories
 5. Link the commands and skills
 6. Install Ripwire and the Codex plugins
-7. Install the DeepSeek model catalog and Imoten agent profiles
+7. Install the DeepSeek model catalog
 
 Private repositories require GitHub CLI authentication. On a new workstation, the first apply installs `gh` and can stop at the authentication gate. Run `gh auth login`, then run `chezmoi apply` again.
 

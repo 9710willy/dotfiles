@@ -26,9 +26,6 @@ done
 
 mkdir -p \
     "$home_dir/work/pstack/skills/poteto-mode/scripts/node_modules" \
-    "$home_dir/work/pstack/skills/poteto-mode/references" \
-    "$home_dir/work/pstack/skills/no-comments/references" \
-    "$home_dir/work/pstack/templates/codex-agents" \
     "$home_dir/work/naru/codex" \
     "$home_dir/work/yeon/bin" \
     "$home_dir/work/yeon/skills/yeon" \
@@ -44,24 +41,6 @@ touch \
     "$home_dir/stuff/evolve/skills/evolve/SKILL.md" \
     "$home_dir/work/archify/archify/bin/archify.mjs" \
     "$home_dir/work/archify/archify/SKILL.md"
-
-cat > "$home_dir/work/pstack/templates/codex-agents/imoten-poteto-agent.toml" <<'EOF'
-name = "imoten-poteto-agent"
-{{MODEL_CONFIG}}
-developer_instructions = """
-{{PROMPT}}
-"""
-EOF
-cat > "$home_dir/work/pstack/templates/codex-agents/imoten-comment-sicko.toml" <<'EOF'
-name = "imoten-comment-sicko"
-sandbox_mode = "read-only"
-{{MODEL_CONFIG}}
-developer_instructions = """
-{{PROMPT}}
-"""
-EOF
-printf '%s\n' 'Poteto prompt.' > "$home_dir/work/pstack/skills/poteto-mode/references/poteto-agent-prompt.md"
-printf '%s\n' 'Comment prompt.' > "$home_dir/work/pstack/skills/no-comments/references/comment-sicko-prompt.md"
 
 cat > "$bin_dir/gh" <<'EOF'
 #!/bin/bash
@@ -112,8 +91,8 @@ COMMAND_LOG="$root/commands.log" HOME="$home_dir" PATH="$test_path" \
 [[ "$(readlink "$home_dir/.local/bin/teio")" == "$home_dir/work/teio-tui/teio.mjs" ]]
 [[ "$(readlink "$home_dir/.codex/skills/evolve/SKILL.md")" == "$home_dir/stuff/evolve/skills/evolve/SKILL.md" ]]
 [[ -f "$home_dir/.local/bin/naru.before-dev-sync" ]]
-grep -q '^model = "deepseek-flash"$' "$home_dir/.codex/agents/imoten-poteto-agent.toml"
-grep -q '^model_reasoning_effort = "high"$' "$home_dir/.codex/agents/imoten-comment-sicko.toml"
+[[ ! -e "$home_dir/.codex/agents/imoten-poteto-agent.toml" ]]
+[[ ! -e "$home_dir/.codex/agents/imoten-comment-sicko.toml" ]]
 
 grep -q 'codex plugin marketplace add https://github.com/9710willy/imoten.git --json' "$root/commands.log"
 grep -q 'codex plugin add imoten@imoten-local' "$root/commands.log"

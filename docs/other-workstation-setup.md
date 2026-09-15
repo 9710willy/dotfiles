@@ -89,7 +89,22 @@ Enter this prompt:
 $imoten:unslop Rewrite this sentence: In order to proceed, we should utilize this configuration.
 ```
 
-Do not run `$setup-pstack` on the DeepSeek workstation. That command still builds its model list from `copilot-api`. Direct Imoten workflows use `deepseek-flash`. Workflows that require several model vendors stop and report that limit.
+If an older Chezmoi install created the two agent profiles, the setup command reports that their names already have an owner. Move those old files aside once:
+
+```bash
+mkdir -p ~/.codex/agents/pre-setup-pstack
+mv ~/.codex/agents/imoten-poteto-agent.toml \
+  ~/.codex/agents/imoten-comment-sicko.toml \
+  ~/.codex/agents/pre-setup-pstack/
+```
+
+Then enter this prompt in Codex:
+
+```text
+$setup-pstack install agents for user scope.
+```
+
+Imoten verifies direct DeepSeek, writes the owned role map and agent profiles, and installs the local operator. Workflows that require several model vendors stop and report that limit.
 
 ## 7. Configure Teio before its first agent run
 
